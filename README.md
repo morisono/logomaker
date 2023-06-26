@@ -9,5 +9,7 @@ app_file: app.py
 pinned: false
 license: other
 ---
+Demo:
+https://huggingface.co/spaces/morisono/logomaker
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
