@@ -7,10 +7,15 @@ import tempfile
 import matplotlib.font_manager as fm
 
 
-def generate_images(colorlist, wordlist, f, ext, w, h, p1, p2, temp_path):
+def generate_images(colorlist, wordlist, f, ext, w, h, p1, p2, y1, y2, temp_path, logo_path):
     i = 0
     filelist = []
     os.makedirs(temp_path, exist_ok=True)
+
+    if logo_path:
+        logo_x = st.sidebar.slider("y1", 0, w, 0, 10)
+        logo_y = st.sidebar.slider("y1", 0, h, 0, 10)
+        logo_image = Image.open(logo_path).convert("RGBA")
     for words in wordlist:
         c1, c2 = words
         subfolder_path = os.path.join(temp_path, f"{c1}_{c2}")
@@ -19,13 +24,15 @@ def generate_images(colorlist, wordlist, f, ext, w, h, p1, p2, temp_path):
             bc, fc = colors
             out_name = f"{i:05d}{ext}"
             image = Image.new("RGB", (w, h), color=bc)
+            if logo_path:
+                image.paste(logo_image, (logo_x, logo_y), mask=logo_image)
             draw = ImageDraw.Draw(image)
             font = ImageFont.truetype(f, p1)
             text_width, text_height = draw.textsize(c1, font=font)
-            draw.text(((w - text_width) / 2, (h - text_height) / 2 - 200), c1, fill=fc, font=font)
+            draw.text(((w - text_width) / 2, (h - text_height) / 2 + y1 ), c1, fill=fc, font=font)
             font = ImageFont.truetype(f, p2)
             text_width, text_height = draw.textsize(c2, font=font)
-            draw.text(((w - text_width) / 2, (h - text_height) / 2 + 20), c2, fill=fc, font=font)
+            draw.text(((w - text_width) / 2, (h - text_height) / 2 + y2 ), c2, fill=fc, font=font)
             temp_image_path = os.path.join(subfolder_path, out_name)
             image.save(temp_image_path)
             filelist.append(temp_image_path)
@@ -41,8 +48,8 @@ def create_zip(out, filelist):
 
 def main():
     _colorlist = [
-        ("white", "black"),
         ("black", "white"),
+        ("white", "black"),
     ]
 
     _wordlist = [
@@ -72,14 +79,41 @@ def main():
     h = st.sidebar.slider("Height", 0, 2560, 512, 8)
     p1 = st.sidebar.slider("pointsize 1", 0, 1256, 100, 8)
     p2 = st.sidebar.slider("pointsize 2", 0, 1256, 400, 8)
+    y1 = st.sidebar.slider("y1", -500, 500, -200, 10)
+    y2 = st.sidebar.slider("y2", -500, 500, 20, 10)
+
+    size_preset = {
+        "WQHD": (2560, 1440),
+        "FHD": (1920, 1080),
+        "HD": (1280, 720),
+        "4:3": (1280, 960),
+        "2:1": (1280, 640),
+        "3:2": (1440, 960),
+        "Square": (1024, 1024),
+        "2:1 B": (1024, 512),
+        "FHD vert.": (1080, 1920),
+        "HD vert.": (720, 1280),
+        "3:4": (960, 1280),
+        "1:2": (640, 1280),
+        "2:3": (960, 1440),
+        "Banner": (1500, 500),
+    }
+    size_selected = st.sidebar.selectbox("Size Preset", list(size_preset.keys()))
+    if size_selected:
+        preset_size = size_preset[size_selected]
+        w, h = preset_size
 
     generate = st.sidebar.button("Generate")
     # if generate:
     current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     size = f"{w}x{h}"
+
+    logo_preset = st.sidebar.selectbox("Logo",["", "images/logo.png"])
+    logo = st.sidebar.file_uploader("Logo Image")
+    logo_path = logo if logo else logo_preset
     _out = f"outputs/{current_time}/{size}"
     temp_path = os.path.join(tempfile.gettempdir(), _out)
-    filelist = generate_images(colorlist, wordlist, f, ext, w, h, p1, p2, temp_path)
+    filelist = generate_images(colorlist, wordlist, f, ext, w, h, p1, p2, y1, y2, temp_path, logo_path)
 
         # save_as_path = st.text_input("Save as", "output.zip") # TODO
         # zip_path = create_zip(save_as_path, filelist)
