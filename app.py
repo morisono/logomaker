@@ -74,13 +74,7 @@ def main():
     f = st.sidebar.selectbox("Font", fontlist)
     # exts = Image.registered_extensions()
     ext = st.sidebar.selectbox("File Format", [".png",".jpg",".tiff"])
-    # ext = st.sidebar.selectbox("File Format", {ex for ex, f in exts.items() if f in Image.OPEN})
-    w = st.sidebar.slider("Width", 0, 2560, 1024, 8)
-    h = st.sidebar.slider("Height", 0, 2560, 512, 8)
-    p1 = st.sidebar.slider("pointsize 1", 0, 1256, 100, 8)
-    p2 = st.sidebar.slider("pointsize 2", 0, 1256, 400, 8)
-    y1 = st.sidebar.slider("y1", -500, 500, -200, 10)
-    y2 = st.sidebar.slider("y2", -500, 500, 20, 10)
+
 
     size_preset = {
         "WQHD": (2560, 1440),
@@ -102,6 +96,14 @@ def main():
     if size_selected:
         preset_size = size_preset[size_selected]
         w, h = preset_size
+
+    # ext = st.sidebar.selectbox("File Format", {ex for ex, f in exts.items() if f in Image.OPEN})
+    w = st.sidebar.slider("Width", 0, 2560, w, 8)
+    h = st.sidebar.slider("Height", 0, 2560, h, 8)
+    p1 = st.sidebar.slider("pointsize 1", 0, 1256, 100, 8)
+    p2 = st.sidebar.slider("pointsize 2", 0, 1256, 400, 8)
+    y1 = st.sidebar.slider("y1", -500, 500, -200, 10)
+    y2 = st.sidebar.slider("y2", -500, 500, 20, 10)
 
     generate = st.sidebar.button("Generate")
     # if generate:
