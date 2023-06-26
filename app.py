@@ -15,6 +15,7 @@ def generate_images(colorlist, wordlist, f, ext, w, h, p1, p2, y1, y2, temp_path
     if logo_path:
         logo_x = st.sidebar.slider("y1", 0, w, 0, 10)
         logo_y = st.sidebar.slider("y1", 0, h, 0, 10)
+        logo_zoom = st.sidebar.slider("Zoom", 0.1, 10.0, 2.0, 0.1)
         logo_image = Image.open(logo_path).convert("RGBA")
     for words in wordlist:
         c1, c2 = words
@@ -25,7 +26,11 @@ def generate_images(colorlist, wordlist, f, ext, w, h, p1, p2, y1, y2, temp_path
             out_name = f"{i:05d}{ext}"
             image = Image.new("RGB", (w, h), color=bc)
             if logo_path:
-                image.paste(logo_image, (logo_x, logo_y), mask=logo_image)
+                logo_w, logo_h = logo_image.size
+                resized_logo_w = int(logo_w * logo_zoom)
+                resized_logo_h = int(logo_h * logo_zoom)
+                resized_logo = logo_image.resize((resized_logo_w, resized_logo_h))
+                image.paste(resized_logo, (logo_x, logo_y), mask=resized_logo)
             draw = ImageDraw.Draw(image)
             font = ImageFont.truetype(f, p1)
             text_width, text_height = draw.textsize(c1, font=font)

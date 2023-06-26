@@ -9,6 +9,7 @@ app_file: app.py
 pinned: false
 license: other
 ---
+![](images/img-01.png)
 Demo:
 https://huggingface.co/spaces/morisono/logomaker
 
