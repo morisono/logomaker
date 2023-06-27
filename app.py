@@ -7,7 +7,7 @@ import tempfile
 import matplotlib.font_manager as fm
 
 
-def generate_images(colorlist, wordlist, f, ext, w, h, gfs, temp_path, logo_path, global_settings):
+def generate_images(colorlist, wordlist, f, ext, w, h, gfs, gpy, temp_path, logo_path, global_settings):
     filelist = []
     os.makedirs(temp_path, exist_ok=True)
 
@@ -17,7 +17,7 @@ def generate_images(colorlist, wordlist, f, ext, w, h, gfs, temp_path, logo_path
         for word in words:
             with st.expander(f"Settings: {word}"):
                 fs = st.slider("Fontsize", 0, 1256, gfs, 8, key=f'{len(filelist):05d}_{word}_fs')
-                py = st.slider("pad_y", -500, 500, 0, 10, key=f'{len(filelist):05d}_{word}_py')
+                py = st.slider("pad_y", -500, 500, gpy, 10, key=f'{len(filelist):05d}_{word}_py')
                 stc = st.text_input("stroke fill", "gray", key=f'{len(filelist):05d}_{word}_stc')
                 stw = st.slider("stroke width", 0, 20, 0, key=f'{len(filelist):05d}_{word}_stw')
 
@@ -147,10 +147,10 @@ def main():
 
     global_settings = st.sidebar.expander("Global Settings")
     with global_settings:
-
-            w = st.slider("Width", 0, 2560, w, 8)
-            h = st.slider("Height", 0, 2560, h, 8)
-            gfs = st.slider("Font size", 0, 2560, 100, 8)
+        w = st.slider("Width", 0, 2560, w, 8)
+        h = st.slider("Height", 0, 2560, h, 8)
+        gfs = st.slider("Font size", 0, 2560, 100, 8)
+        gpy = st.slider("pad_y", -500, 500, 100, 10)
 
     current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     size = f"{w}x{h}"
@@ -173,7 +173,7 @@ def main():
     if export_path:
         export_json()
 
-    filelist = generate_images(colorlist, wordlist, f, ext, w, h, gfs, temp_path, logo_path, global_settings)
+    filelist = generate_images(colorlist, wordlist, f, ext, w, h, gfs, gpy, temp_path, logo_path, global_settings)
 
     save_as_path = "outputs.zip"
     zip_path = create_zip(save_as_path, filelist)
