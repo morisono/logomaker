@@ -29,8 +29,18 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
         if filename.endswith(".ttf"):
             fontlist.append(os.path.join(font_path, filename))
 
-    def process_image(image, colors, words, gpx, gpy, gf, gfs, glx, gly, glz, stc, stw, gen_qr, qr_text):
-        for word, px, py, f, fs, lx, ly, lz, sc, sw in zip(words, gpx, gpy, gf, gfs, glx, gly, glz, stc, stw):
+    def process_logo(image, lx, ly, lz):
+        for lx, ly, lz, logo_file in zip(glx, gly, glz, logo_path):
+            logo_image = Image.open(logo_file).convert("RGBA")
+            logo_w, logo_h = logo_image.size
+            resized_logo_w = int(logo_w * lz)
+            resized_logo_h = int(logo_h * lz)
+            resized_logo = logo_image.resize((resized_logo_w, resized_logo_h))
+            image.paste(resized_logo, (lx, ly), mask=resized_logo)
+            return image
+
+    def process_image(image, words, gpx, gpy, gf, gfs, stc, stw):
+        for word, px, py, f, fs, sc, sw in zip(words, gpx, gpy, gf, gfs, stc, stw):
 
             font = ImageFont.truetype(f, fs)
             text_bbox = draw.textbbox((0, 0), word, font=font)
@@ -40,26 +50,17 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
             text_y = (h - text_height) * 0.5 + py
 
             draw.text((text_x, text_y),
-                    text=word, stroke_fill=sc, stroke_width=sw, fill=fc, font=font, anchor='lt')
-
-            if logo_path:
-                for logo_file in logo_path:
-                    logo_image = Image.open(logo_file).convert("RGBA")
-                    logo_w, logo_h = logo_image.size
-                    resized_logo_w = int(logo_w * lz)
-                    resized_logo_h = int(logo_h * lz)
-                    resized_logo = logo_image.resize((resized_logo_w, resized_logo_h))
-                    image.paste(resized_logo, (lx, ly), mask=resized_logo)
-
-            if gen_qr:
-                qr_size = h * 0.01 if h < w else w * 0.01
-                qr_border =  qr_size * 0.2
-                qr_position = (int(w-30*qr_size),  int(h-30*qr_size))
-                qr_image = generate_qr(words, qr_size, qr_border)
-                image.paste(qr_image, qr_position)
-
+                    text=word, stroke_fill=sc, stroke_width=sw, fill=fc, font=font, anchor='lm')
         return image
 
+    def process_qr(image, qr_text):
+        for qr in qr_text:
+            qr_size = h * 0.01 if h < w else w * 0.01
+            qr_border =  qr_size * 0.2
+            qr_position = (int(w-30*qr_size),  int(h-30*qr_size))
+            qr_image = generate_qr(qr, qr_size, qr_border)
+            image.paste(qr_image, qr_position)
+        return image
 
     for words in wordlist:
         subfolder_path = os.path.join(temp_path, f"{words}")
@@ -68,26 +69,31 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
         for word in words:
             with global_settings:
                 gpx.append(st.slider(f"Pad x : \"{word}\"", -500, 500, 0, 10, key=f'{len(filelist):05d}_{word}_gpx'))
-                gpy.append(st.slider(f"Pad y : \"{word}\"", -500, 500, 100, 10, key=f'{len(filelist):05d}_{word}_gpy'))
-                gfs.append(st.slider(f"Font size : \"{word}\"", 0, 2560, 100, 8, key=f'{len(filelist):05d}_{word}_gfs'))
+                gpy.append(st.slider(f"Pad y : \"{word}\"", -500, 500, 0, 10, key=f'{len(filelist):05d}_{word}_gpy'))
+                gfs.append(st.slider(f"Font size : \"{word}\"", 0, 800, 100, 8, key=f'{len(filelist):05d}_{word}_gfs'))
                 gf.append(st.sidebar.selectbox(f"Font : \"{word}\"", fontlist, key=f'{len(filelist):05d}_{word}_gf'))
-                glx.append(st.slider(f"Logo x: \"{word}\"", -w, w, 0, 10, key=f'{len(filelist):05d}_{word}_glx'))
-                gly.append(st.slider(f"Logo y: \"{word}\"", -h, h, 0, 10, key=f'{len(filelist):05d}_{word}_gly'))
-                glz.append(st.slider("Logo Zoom", 0.05, 20.0, 0.20, 0.01, key=f'{len(filelist):05d}_{word}_glz'))
+                glz.append(st.slider("Logo Zoom", 0.05, 4.0, 0.20, 0.01, key=f'{len(filelist):05d}_{word}_glz'))
                 stc.append(st.text_input(f"Stroke fill: \"{word}\"", "gray", key=f'{len(filelist):05d}_{word}_stc'))
                 stw.append(st.slider(f"Stroke width: \"{word}\"", 0, 20, 0, key=f'{len(filelist):05d}_{word}_stw'))
 
-        for colors in colorlist:
-            bc, fc = colors
-            image = Image.new("RGB", (w, h), color=bc)
-            draw = ImageDraw.Draw(image)
+    for colors in colorlist:
+        bc, fc = colors
+        image = Image.new("RGB", (w, h), color=bc)
+        draw = ImageDraw.Draw(image)
 
-            image = process_image(image, colors, words, gpx, gpy, gf, gfs, glx, gly, glz, stc, stw, gen_qr, qr_text)
+        if logo_path:
+            with global_settings:
+                glx.append(st.slider(f"Logo x: \"{word}\"", -w, w, 0, 10, key=f'{len(filelist):05d}_{word}_glx'))
+                gly.append(st.slider(f"Logo y: \"{word}\"", -h, h, 0, 10, key=f'{len(filelist):05d}_{word}_gly'))
+            image = process_logo(image, glx, gly, glz)
+        image = process_image(image, words, gpx, gpy, gf, gfs, stc, stw)
+        if gen_qr:
+            image = process_qr(image, qr_text)
 
-            out_name = f"{len(filelist):05d}{ext}"
-            temp_image_path = os.path.join(subfolder_path, out_name)
-            image.save(temp_image_path)
-            filelist.append(temp_image_path)
+        out_name = f"{len(filelist):05d}{ext}"
+        temp_image_path = os.path.join(subfolder_path, out_name)
+        image.save(temp_image_path)
+        filelist.append(temp_image_path)
 
     preview_image = []
 
@@ -130,11 +136,11 @@ def main():
     cols = st.columns(grid_col)
 
     st.sidebar.title("Settings")
-    colorlist_input = st.sidebar.text_area("Enter color list (split like c1;c2;..,newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in _colorlist]))
-    colorlist = [tuple(line.split(';')) for line in colorlist_input.splitlines() if line.strip()]
+    _colorlist = st.sidebar.text_area("Enter color list (split like c1;c2;..,newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in _colorlist]))
+    colorlist = [tuple(line.split(';')) for line in _colorlist.splitlines() if line.strip()]
 
-    wordlist_input = st.sidebar.text_area("Enter word list (split like w1;w2;..,newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in _wordlist]))
-    wordlist = [tuple(line.split(';')) for line in wordlist_input.splitlines() if line.strip()]
+    _wordlist = st.sidebar.text_area("Enter word list (split like w1;w2;..,newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in _wordlist]))
+    wordlist = [tuple(line.split(';')) for line in _wordlist.splitlines() if line.strip()]
 
 
     size_preset = {
@@ -164,36 +170,34 @@ def main():
         h = st.slider("Height", 0, 2560, h, 8)
 
     logolist = []
-    logo_path = 'images/logo'
-    for filename in os.listdir(logo_path):
-        if filename.endswith(".png"):
-            logolist.append(os.path.join(logo_path, filename))
-    logo = st.sidebar.selectbox("Logo", logolist)
+    # logo_path = 'images/logo'
+    # for filename in os.listdir(logo_path):
+    #     if filename.endswith(".png"):
+    #         logolist.append(os.path.join(logo_path, filename))
+    # logo = st.sidebar.selectbox("Logo", logolist)
     logo = st.sidebar.file_uploader("Logo Image", accept_multiple_files=True)
     logo_path = logo if logo else [].append(logolist)
     temp_path = tempfile.gettempdir()
 
-    gen_qr = st.sidebar.checkbox("QR", True)
+    gen_qr = st.sidebar.checkbox("QR")
     if gen_qr:
-        qr_text = st.sidebar.text_area("QR text", "example.com")
+        _qr_text = st.sidebar.text_area("QR text", "example.com")
     else:
-        qr_text = ""
+        _qr_text = ""
+    qr_text = [line for line in _qr_text.splitlines() if line.strip()]
     # exts = Image.registered_extensions()
     # ext = st.sidebar.selectbox("File Format", {ex for ex, f in exts.items() if f in Image.OPEN})
-    ext = st.sidebar.selectbox("File Format", [".png",".jpg",".tiff"])
+    ext = st.sidebar.selectbox("File Format", [".png",".jpg",".tiff", ".gif", ".eps",".ico", ".webp"])
 
     # generate = st.sidebar.button("Generate GIF")
     # if generate:
 
 
-    current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     size = f"{w}x{h}"
     gpx, gpy, gf, gfs, glx, gly, glz, stc, stw = [],[],[],[],[],[],[],[],[]
     export_data = {
-        'colorlist': colorlist,
-        'wordlist': wordlist,
-        'logolist': logolist,
-        'current_time': current_time,
+        'timestamp': timestamp,
         'size': size,
         'width': w,
         'height': h,
@@ -206,6 +210,9 @@ def main():
         'default_logo_zoom': glz,
         'default_stroke_color': stc,
         'default_stroke_width': stw,
+        'colorlist': colorlist,
+        'wordlist': wordlist,
+        'logolist': logolist,
     }
     filelist = generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, qr_text, global_settings, preview_button, gridview_button, grid_col, cols)
 
