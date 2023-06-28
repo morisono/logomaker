@@ -1,11 +1,12 @@
 import os
+import glob
 import datetime
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import tempfile
 import matplotlib.font_manager as fm
 
-from modules.common import load_ui_config, create_zip, export_settings, generate_qr
+from modules.common import load_ui_config, create_zip, export_settings, generate_qr, clear_temp_folder
 from modules.ui import hide_ft_style
 
 
@@ -18,17 +19,7 @@ st.set_page_config(
 hide_ft_style()
 
 
-def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, qr_text, global_settings, preview_button, gridview_button, grid_col, cols):
-    filelist = []
-    os.makedirs(temp_path, exist_ok=True)
-    # font_paths = fm.findSystemFonts()
-    # fontlist = [os.path.splitext(os.path.basename(font_path))[0] for font_path in font_paths]
-    fontlist = []
-    font_path = 'fonts'
-    for filename in os.listdir(font_path):
-        if filename.endswith(".ttf"):
-            fontlist.append(os.path.join(font_path, filename))
-
+def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, gen_gif, delay,  qr_text, global_settings, preview_button, gridview_button, grid_col, cols):
     def process_logo(image, lx, ly, lz):
         for lx, ly, lz, logo_file in zip(glx, gly, glz, logo_path):
             logo_image = Image.open(logo_file).convert("RGBA")
@@ -62,9 +53,32 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
             image.paste(qr_image, qr_position)
         return image
 
+    def generate_gif(image_path, delay, loop, output_path):
+        images = glob.glob(os.path.join(image_path, "*"))
+        frames = []
+
+        for image_file in images:
+            img = Image.open(image_file)
+            frames.append(img)
+
+        frames[0].save(output_path, format="GIF", append_images=frames[1:], save_all=True, duration=delay, loop=loop)
+
+        return image
+
+    filelist, fontlist, preview_image = [],[],[]
+    os.makedirs(temp_path, exist_ok=True)
     for words in wordlist:
         subfolder_path = os.path.join(temp_path, f"{words}")
         os.makedirs(subfolder_path, exist_ok=True)
+
+    # font_paths = fm.findSystemFonts()
+    # fontlist = [os.path.splitext(os.path.basename(font_path))[0] for font_path in font_paths]
+    font_path = 'fonts'
+    for filename in os.listdir(font_path):
+        if filename.endswith(".ttf"):
+            fontlist.append(os.path.join(font_path, filename))
+
+    for words in wordlist:
 
         for word in words:
             with global_settings:
@@ -87,6 +101,7 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
                 gly.append(st.slider(f"Logo y: \"{word}\"", -h, h, 0, 10, key=f'{len(filelist):05d}_{word}_gly'))
             image = process_logo(image, glx, gly, glz)
         image = process_image(image, words, gpx, gpy, gf, gfs, stc, stw)
+
         if gen_qr:
             image = process_qr(image, qr_text)
 
@@ -95,7 +110,11 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
         image.save(temp_image_path)
         filelist.append(temp_image_path)
 
-    preview_image = []
+    if gen_gif:
+        images_path = subfolder_path
+        gif_path =  'output.gif'
+        image = generate_gif(images_path, delay, 0, gif_path)
+        st.image(gif_path)
 
     if preview_button:
         preview_image = filelist
@@ -185,6 +204,17 @@ def main():
     else:
         _qr_text = ""
     qr_text = [line for line in _qr_text.splitlines() if line.strip()]
+
+    gen_gif = st.sidebar.checkbox("GIF Animation")
+    if gen_gif:
+        delay = st.sidebar.slider("Delay", 0, 5000, 0, 100)
+
+    if gen_qr:
+        _qr_text = st.sidebar.text_area("QR text", "example.com")
+    else:
+        _qr_text = ""
+    qr_text = [line for line in _qr_text.splitlines() if line.strip()]
+
     # exts = Image.registered_extensions()
     # ext = st.sidebar.selectbox("File Format", {ex for ex, f in exts.items() if f in Image.OPEN})
     ext = st.sidebar.selectbox("File Format", [".png",".jpg",".tiff", ".gif", ".eps",".ico", ".webp"])
@@ -214,7 +244,7 @@ def main():
         'wordlist': wordlist,
         'logolist': logolist,
     }
-    filelist = generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, qr_text, global_settings, preview_button, gridview_button, grid_col, cols)
+    filelist = generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, gen_gif, delay,  qr_text, global_settings, preview_button, gridview_button, grid_col, cols)
 
     export_path = os.path.join(temp_path, 'settings.json')
     export_settings(export_data, export_path)
@@ -225,6 +255,7 @@ def main():
     zip_path = create_zip(save_as_path, filelist)
     st.sidebar.download_button("Download (.zip)", data=zip_path, file_name=save_as_path)
 
+    clear_temp_folder(temp_path)
 
 if __name__ == "__main__":
     main()

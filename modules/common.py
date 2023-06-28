@@ -3,7 +3,19 @@ import json
 import zipfile
 import streamlit as st
 import qrcode
+import shutil
 
+
+def clear_temp_folder(temp_folder_path):
+    for filename in os.listdir(temp_folder_path):
+        file_path = os.path.join(temp_folder_path, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            print(f"Failed to delete {file_path}. Reason: {e}")
 
 def load_ui_config():
     with open('ui-config.json') as f:
