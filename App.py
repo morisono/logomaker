@@ -2,9 +2,20 @@ import os
 import datetime
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
-import zipfile
 import tempfile
 import matplotlib.font_manager as fm
+
+from modules.common import load_ui_config, create_zip, export_settings
+from modules.ui import hide_ft_style
+
+
+load_ui_config()
+st.set_page_config(
+    page_title=st.session_state['page_title'],
+    page_icon=st.session_state['page_icon'],
+    layout=st.session_state['layout'],
+    initial_sidebar_state='auto')
+hide_ft_style()
 
 
 def generate_images(colorlist, wordlist, f, ext, w, h, gfs, gpy, temp_path, logo_path, global_settings):
@@ -86,17 +97,8 @@ def generate_images(colorlist, wordlist, f, ext, w, h, gfs, gpy, temp_path, logo
     return filelist
 
 
-def create_zip(zip_path, filelist):
-    with zipfile.ZipFile(zip_path, "w") as zipf:
-        for file in filelist:
-            arcname = os.path.join(os.path.dirname(file), os.path.basename(file))
-            zipf.write(file, arcname)
-    return zip_path
-
-def export_json():
-    pass
-
 def main():
+
     _colorlist = [
         ("black", "white"),
         ("white", "red"),
@@ -106,7 +108,6 @@ def main():
     _wordlist = [
         ("Designed by", "m.s."),
     ]
-
     st.title("Logo Maker Web UI")
 
     st.sidebar.title("Settings")
@@ -169,15 +170,20 @@ def main():
     # generate = st.sidebar.button("Generate GIF")
     # if generate:
 
-    export_path = st.sidebar.button("Export Settings (.json)", "outputs.json")
+    export_path = st.sidebar.button("Export settings (.json)")
     if export_path:
-        export_json()
+        export_data = {
+            'colorlist': colorlist,
+            'wordlist': wordlist
+        }
+        export_settings(export_data)
+
 
     filelist = generate_images(colorlist, wordlist, f, ext, w, h, gfs, gpy, temp_path, logo_path, global_settings)
 
     save_as_path = "outputs.zip"
     zip_path = create_zip(save_as_path, filelist)
-    st.sidebar.download_button("Download ZIP", data=zip_path, file_name=save_as_path)
+    st.sidebar.download_button("Download (.zip)", data=zip_path, file_name=save_as_path)
 
 
 if __name__ == "__main__":
