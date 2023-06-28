@@ -4,9 +4,8 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import tempfile
 import matplotlib.font_manager as fm
-from itertools import cycle
 
-from modules.common import load_ui_config, create_zip, export_settings
+from modules.common import load_ui_config, create_zip, export_settings, generate_qr
 from modules.ui import hide_ft_style
 
 
@@ -19,7 +18,7 @@ st.set_page_config(
 hide_ft_style()
 
 
-def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, global_settings, preview_button, gridview_button, grid_col, cols):
+def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, qr_text, global_settings, preview_button, gridview_button, grid_col, cols):
     filelist = []
     os.makedirs(temp_path, exist_ok=True)
     # font_paths = fm.findSystemFonts()
@@ -30,7 +29,7 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
         if filename.endswith(".ttf"):
             fontlist.append(os.path.join(font_path, filename))
 
-    def process_image(image, colors, words, gpx, gpy, gf, gfs, glx, gly, glz, stc, stw):
+    def process_image(image, colors, words, gpx, gpy, gf, gfs, glx, gly, glz, stc, stw, gen_qr, qr_text):
         for word, px, py, f, fs, lx, ly, lz, sc, sw in zip(words, gpx, gpy, gf, gfs, glx, gly, glz, stc, stw):
 
             font = ImageFont.truetype(f, fs)
@@ -51,6 +50,14 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
                     resized_logo_h = int(logo_h * lz)
                     resized_logo = logo_image.resize((resized_logo_w, resized_logo_h))
                     image.paste(resized_logo, (lx, ly), mask=resized_logo)
+
+            if gen_qr:
+                qr_size = h * 0.01 if h < w else w * 0.01
+                qr_border =  qr_size * 0.2
+                qr_position = (int(w-30*qr_size),  int(h-30*qr_size))
+                qr_image = generate_qr(words, qr_size, qr_border)
+                image.paste(qr_image, qr_position)
+
         return image
 
 
@@ -75,7 +82,7 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
             image = Image.new("RGB", (w, h), color=bc)
             draw = ImageDraw.Draw(image)
 
-            image = process_image(image, colors, words, gpx, gpy, gf, gfs, glx, gly, glz, stc, stw)
+            image = process_image(image, colors, words, gpx, gpy, gf, gfs, glx, gly, glz, stc, stw, gen_qr, qr_text)
 
             out_name = f"{len(filelist):05d}{ext}"
             temp_image_path = os.path.join(subfolder_path, out_name)
@@ -166,6 +173,11 @@ def main():
     logo_path = logo if logo else [].append(logolist)
     temp_path = tempfile.gettempdir()
 
+    gen_qr = st.sidebar.checkbox("QR", True)
+    if gen_qr:
+        qr_text = st.sidebar.text_area("QR text", "example.com")
+    else:
+        qr_text = ""
     # exts = Image.registered_extensions()
     # ext = st.sidebar.selectbox("File Format", {ex for ex, f in exts.items() if f in Image.OPEN})
     ext = st.sidebar.selectbox("File Format", [".png",".jpg",".tiff"])
@@ -195,7 +207,7 @@ def main():
         'default_stroke_color': stc,
         'default_stroke_width': stw,
     }
-    filelist = generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, global_settings, preview_button, gridview_button, grid_col, cols)
+    filelist = generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, qr_text, global_settings, preview_button, gridview_button, grid_col, cols)
 
     export_path = os.path.join(temp_path, 'settings.json')
     export_settings(export_data, export_path)
