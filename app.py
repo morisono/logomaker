@@ -120,9 +120,10 @@ def main():
     # font_paths = fm.findSystemFonts()
     # fontlist = [os.path.splitext(os.path.basename(font_path))[0] for font_path in font_paths]
     fontlist = []
-    for filename in os.listdir('fonts'):
+    font_path = 'fonts'
+    for filename in os.listdir(font_path):
         if filename.endswith(".ttf"):
-            fontlist.append(os.path.join('fonts', filename))
+            fontlist.append(os.path.join(font_path, filename))
     f = st.sidebar.selectbox("Font", fontlist)
 
     size_preset = {
@@ -156,12 +157,16 @@ def main():
     current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     size = f"{w}x{h}"
 
-    logo_preset = st.sidebar.multiselect("Logo",["", "images/logo.png"])
-    logo = st.sidebar.file_uploader("Logo Image", accept_multiple_files=True)
-    logo_path = logo if logo else [].append(logo_preset)
+    logolist = []
+    logo_path = 'images/logo'
+    for filename in os.listdir(logo_path):
+        if filename.endswith(".png"):
+            logolist.append(os.path.join(logo_path, filename))
+    logo = st.sidebar.selectbox("Logo", logolist)
 
-    temp_dir = f"outputs/{current_time}/{size}"
-    temp_path = os.path.join(tempfile.gettempdir(), temp_dir)
+    logo = st.sidebar.file_uploader("Logo Image", accept_multiple_files=True)
+    logo_path = logo if logo else [].append(logolist)
+    temp_path = tempfile.gettempdir()
 
     # exts = Image.registered_extensions()
     # ext = st.sidebar.selectbox("File Format", {ex for ex, f in exts.items() if f in Image.OPEN})
@@ -170,14 +175,23 @@ def main():
     # generate = st.sidebar.button("Generate GIF")
     # if generate:
 
-    export_path = st.sidebar.button("Export settings (.json)")
-    if export_path:
-        export_data = {
-            'colorlist': colorlist,
-            'wordlist': wordlist
-        }
-        export_settings(export_data)
 
+
+    export_data = {
+        'colorlist': colorlist,
+        'wordlist': wordlist,
+        'logolist': logolist,
+        'current_time': current_time,
+        'size': size,
+        'width': w,
+        'height': h,
+        'fontsize': gfs,
+    }
+
+    export_path = os.path.join(temp_path, 'settings.json')
+    export_settings(export_data, export_path)
+
+    st.sidebar.download_button("Export settings (.json)", data=open(export_path, 'rb').read(), file_name=export_path)
 
     filelist = generate_images(colorlist, wordlist, f, ext, w, h, gfs, gpy, temp_path, logo_path, global_settings)
 

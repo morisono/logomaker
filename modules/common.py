@@ -14,11 +14,10 @@ def load_ui_config():
 def create_zip(zip_path, filelist):
     with zipfile.ZipFile(zip_path, "w") as zipf:
         for file in filelist:
-            arcname = os.path.join(os.path.dirname(file), os.path.basename(file))
-            zipf.write(file, arcname)
+            zipf.write(file, zip_path)
     return zip_path
 
 
-def export_settings(export_data):
-    with open('settings.json', mode='w', encoding='utf-8') as f:
+def export_settings(export_data, export_path):
+    with open(export_path, mode='w', encoding='utf-8') as f:
         json.dump(export_data, f, ensure_ascii=False, indent=2)
