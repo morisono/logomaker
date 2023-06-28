@@ -48,57 +48,46 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, temp_path
 
         return image
 
-    if logo_path:
-        for logo_file in logo_path:
+
+    for words in wordlist:
+        subfolder_path = os.path.join(temp_path, f"{words}")
+        os.makedirs(subfolder_path, exist_ok=True)
+
+        for word in words:
             with global_settings:
-                logo_x = st.slider("Logo x", -w, w, 0, 10, key=f'{logo_file}_x')
-                logo_y = st.slider("Logo y", -h, h, 0, 10, key=f'{logo_file}_y')
-                logo_z = st.slider("Logo Zoom", 0.05, 20.0, 0.20, 0.01, key=f'{logo_file}_z')
+                gpx.append(st.slider(f"Pad x : {word}", -500, 500, 0, 10, key=f'{len(filelist):05d}_{word}_gpx'))
+                gpy.append(st.slider(f"Pad y : {word}", -500, 500, 100, 10, key=f'{len(filelist):05d}_{word}_gpy'))
+                gfs.append(st.slider("Font size : {word}", 0, 2560, 100, 8, key=f'{len(filelist):05d}_{word}_gfs'))
+                gf.append(st.sidebar.selectbox("Font : {word}", fontlist, key=f'{len(filelist):05d}_{word}_gf'))
 
-            logo_image = Image.open(logo_file).convert("RGBA")
+        # with st.expander(f"Settings: {words}"):
+        #     fs = st.slider("Fontsize", 0, 1256, gfs, 8, key=f'{len(filelist):05d}_{words}_fs')
+        for colors in colorlist:
+            bc, fc = colors
+            image = Image.new("RGB", (w, h), color=bc)
+            draw = ImageDraw.Draw(image)
 
-            for words in wordlist:
-                subfolder_path = os.path.join(temp_path, f"{words}")
-                os.makedirs(subfolder_path, exist_ok=True)
+            if logo_path:
+                for logo_file in logo_path:
+                    with global_settings:
+                        logo_x = st.slider("Logo x", -w, w, 0, 10, key=f'{len(filelist):05d}_{word}_lx')
+                        logo_y = st.slider("Logo y", -h, h, 0, 10, key=f'{len(filelist):05d}_{word}_ly')
+                        logo_z = st.slider("Logo Zoom", 0.05, 20.0, 0.20, 0.01, key=f'{len(filelist):05d}_{word}_lz')
+                    logo_image = Image.open(logo_file).convert("RGBA")
+                    logo_w, logo_h = logo_image.size
+                    resized_logo_w = int(logo_w * logo_z)
+                    resized_logo_h = int(logo_h * logo_z)
+                    resized_logo = logo_image.resize((resized_logo_w, resized_logo_h))
 
-                # with st.expander(f"Settings: {words}"):
-                #     fs = st.slider("Fontsize", 0, 1256, gfs, 8, key=f'{len(filelist):05d}_{words}_fs')
+                    image.paste(resized_logo, (logo_x, logo_y), mask=resized_logo)
 
-                logo_w, logo_h = logo_image.size
-                resized_logo_w = int(logo_w * logo_z)
-                resized_logo_h = int(logo_h * logo_z)
-                resized_logo = logo_image.resize((resized_logo_w, resized_logo_h))
-                image.paste(resized_logo, (logo_x, logo_y), mask=resized_logo)
+            image = process_image(image, colors, words, gpx, gpy, gf, gfs)
 
-                image = process_image(image, colors, words, gpx, gpy, gf, gfs)
-                st.image(image, caption=logo_file.name, use_column_width=True)
-                image.save(temp_image_path)
-                filelist.append(temp_image_path)
-
-    else:
-        for words in wordlist:
-            subfolder_path = os.path.join(temp_path, f"{words}")
-            os.makedirs(subfolder_path, exist_ok=True)
-
-            for word in words:
-                with global_settings:
-                    gpx.append(st.slider(f"Pad x : {word}", -500, 500, 0, 10, key=f'{len(filelist):05d}_{word}_gpx'))
-                    gpy.append(st.slider(f"Pad y : {word}", -500, 500, 100, 10, key=f'{len(filelist):05d}_{word}_gpy'))
-                    gfs.append(st.slider("Font size : {word}", 0, 2560, 100, 8, key=f'{len(filelist):05d}_{word}_gfs'))
-                    gf.append(st.sidebar.selectbox("Font : {word}", fontlist, key=f'{len(filelist):05d}_{word}_gf'))
-
-            # with st.expander(f"Settings: {words}"):
-            #     fs = st.slider("Fontsize", 0, 1256, gfs, 8, key=f'{len(filelist):05d}_{words}_fs')
-            for colors in colorlist:
-                bc, fc = colors
-                image = Image.new("RGB", (w, h), color=bc)
-                draw = ImageDraw.Draw(image)
-                image = process_image(image, colors, words, gpx, gpy, gf, gfs)
-                out_name = f"{len(filelist):05d}{ext}"
-                temp_image_path = os.path.join(subfolder_path, out_name)
-                image.save(temp_image_path)
-                st.image(image, caption=os.path.basename(temp_image_path), use_column_width=True)
-                filelist.append(temp_image_path)
+            out_name = f"{len(filelist):05d}{ext}"
+            temp_image_path = os.path.join(subfolder_path, out_name)
+            image.save(temp_image_path)
+            st.image(image, caption=os.path.basename(temp_image_path), use_column_width=True)
+            filelist.append(temp_image_path)
 
     return filelist
 
