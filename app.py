@@ -18,7 +18,7 @@ st.set_page_config(
 hide_ft_style()
 
 
-def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, temp_path, logo_path, global_settings):
+def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, temp_path, logo_path, global_settings):
     filelist = []
     os.makedirs(temp_path, exist_ok=True)
     # font_paths = fm.findSystemFonts()
@@ -29,8 +29,8 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, temp_path
         if filename.endswith(".ttf"):
             fontlist.append(os.path.join(font_path, filename))
 
-    def process_image(image, colors, words, gpx, gpy, gf, gfs):
-        for word, px, py, f, fs in zip(words, gpx, gpy, gf, gfs):
+    def process_image(image, colors, words, gpx, gpy, gf, gfs, glx, gly, glz):
+        for word, px, py, f, fs, lx, ly, lz in zip(words, gpx, gpy, gf, gfs, glx, gly, glz):
             with st.expander(f"Settings: {word}"):
                 stc = st.text_input("stroke fill", "gray", key=f'{len(filelist):05d}_{colors}_{word}_stc')
                 stw = st.slider("stroke width", 0, 20, 0, key=f'{len(filelist):05d}_{colors}_{word}_stw')
@@ -42,10 +42,17 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, temp_path
             text_x = (w - text_width) * 0.5 + px
             text_y = (h - text_height) * 0.5 + py
 
-            st.write(word)
             draw.text((text_x, text_y),
                     text=word, stroke_fill=stc, stroke_width=stw, fill=fc, font=font, anchor='lt')
 
+            if logo_path:
+                for logo_file in logo_path:
+                    logo_image = Image.open(logo_file).convert("RGBA")
+                    logo_w, logo_h = logo_image.size
+                    resized_logo_w = int(logo_w * lz)
+                    resized_logo_h = int(logo_h * lz)
+                    resized_logo = logo_image.resize((resized_logo_w, resized_logo_h))
+                    image.paste(resized_logo, (lx, ly), mask=resized_logo)
         return image
 
 
@@ -57,8 +64,11 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, temp_path
             with global_settings:
                 gpx.append(st.slider(f"Pad x : {word}", -500, 500, 0, 10, key=f'{len(filelist):05d}_{word}_gpx'))
                 gpy.append(st.slider(f"Pad y : {word}", -500, 500, 100, 10, key=f'{len(filelist):05d}_{word}_gpy'))
-                gfs.append(st.slider("Font size : {word}", 0, 2560, 100, 8, key=f'{len(filelist):05d}_{word}_gfs'))
-                gf.append(st.sidebar.selectbox("Font : {word}", fontlist, key=f'{len(filelist):05d}_{word}_gf'))
+                gfs.append(st.slider(f"Font size : {word}", 0, 2560, 100, 8, key=f'{len(filelist):05d}_{word}_gfs'))
+                gf.append(st.sidebar.selectbox(f"Font : {word}", fontlist, key=f'{len(filelist):05d}_{word}_gf'))
+                glx.append(st.slider("Logo x", -w, w, 0, 10, key=f'{len(filelist):05d}_{word}_glx'))
+                gly.append(st.slider("Logo y", -h, h, 0, 10, key=f'{len(filelist):05d}_{word}_gly'))
+                glz.append(st.slider("Logo Zoom", 0.05, 20.0, 0.20, 0.01, key=f'{len(filelist):05d}_{word}_glz'))
 
         # with st.expander(f"Settings: {words}"):
         #     fs = st.slider("Fontsize", 0, 1256, gfs, 8, key=f'{len(filelist):05d}_{words}_fs')
@@ -67,21 +77,7 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, temp_path
             image = Image.new("RGB", (w, h), color=bc)
             draw = ImageDraw.Draw(image)
 
-            if logo_path:
-                for logo_file in logo_path:
-                    with global_settings:
-                        logo_x = st.slider("Logo x", -w, w, 0, 10, key=f'{len(filelist):05d}_{word}_lx')
-                        logo_y = st.slider("Logo y", -h, h, 0, 10, key=f'{len(filelist):05d}_{word}_ly')
-                        logo_z = st.slider("Logo Zoom", 0.05, 20.0, 0.20, 0.01, key=f'{len(filelist):05d}_{word}_lz')
-                    logo_image = Image.open(logo_file).convert("RGBA")
-                    logo_w, logo_h = logo_image.size
-                    resized_logo_w = int(logo_w * logo_z)
-                    resized_logo_h = int(logo_h * logo_z)
-                    resized_logo = logo_image.resize((resized_logo_w, resized_logo_h))
-
-                    image.paste(resized_logo, (logo_x, logo_y), mask=resized_logo)
-
-            image = process_image(image, colors, words, gpx, gpy, gf, gfs)
+            image = process_image(image, colors, words, gpx, gpy, gf, gfs, glx, gly, glz)
 
             out_name = f"{len(filelist):05d}{ext}"
             temp_image_path = os.path.join(subfolder_path, out_name)
@@ -95,8 +91,9 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, temp_path
 def main():
     _colorlist = [
         ("black", "white"),
-        ("white", "red"),
-        ("yellow", "black"),
+        ("cyan", "magenta"),
+        ("red", "blue"),
+        ("green", "yellow")
     ]
     _wordlist = [
         ("Designed by", "m.s."),
@@ -112,6 +109,7 @@ def main():
 
 
     size_preset = {
+        "Banner (1500, 500)": (1500, 500),
         "2:1 (1024, 512)": (1024, 512),
         "Square (1024, 1024)": (1024, 1024),
         "WQHD (2560, 1440)": (2560, 1440),
@@ -125,7 +123,6 @@ def main():
         "3:4 (960, 1280)": (960, 1280),
         "1:2 (640, 1280)": (640, 1280),
         "2:3 960, 1440)": (960, 1440),
-        "Banner (1500, 500)": (1500, 500),
     }
     size_selected = st.sidebar.selectbox("Size Preset", list(size_preset.keys()))
     if size_selected:
@@ -157,7 +154,7 @@ def main():
 
     current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     size = f"{w}x{h}"
-    gpx, gpy, gf, gfs = [],[],[],[]
+    gpx, gpy, gf, gfs, glx, gly, glz = [],[],[],[],[],[],[]
 
     export_data = {
         'colorlist': colorlist,
@@ -171,8 +168,11 @@ def main():
         'default_x': gpx,
         'default_y': gpy,
         'default_fontsize': gfs,
+        'default_logo_x': glx,
+        'default_logo_y': gly,
+        'default_logo_zoom': glz,
     }
-    filelist = generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, temp_path, logo_path, global_settings)
+    filelist = generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, temp_path, logo_path, global_settings)
 
     export_path = os.path.join(temp_path, 'settings.json')
     export_settings(export_data, export_path)
