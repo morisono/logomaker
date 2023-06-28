@@ -4,6 +4,7 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import tempfile
 import matplotlib.font_manager as fm
+from itertools import cycle
 
 from modules.common import load_ui_config, create_zip, export_settings
 from modules.ui import hide_ft_style
@@ -18,7 +19,7 @@ st.set_page_config(
 hide_ft_style()
 
 
-def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, temp_path, logo_path, global_settings):
+def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, global_settings, preview_button, gridview_button, grid_col, cols):
     filelist = []
     os.makedirs(temp_path, exist_ok=True)
     # font_paths = fm.findSystemFonts()
@@ -29,11 +30,8 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
         if filename.endswith(".ttf"):
             fontlist.append(os.path.join(font_path, filename))
 
-    def process_image(image, colors, words, gpx, gpy, gf, gfs, glx, gly, glz):
-        for word, px, py, f, fs, lx, ly, lz in zip(words, gpx, gpy, gf, gfs, glx, gly, glz):
-            with st.expander(f"Settings: {word}"):
-                stc = st.text_input("stroke fill", "gray", key=f'{len(filelist):05d}_{colors}_{word}_stc')
-                stw = st.slider("stroke width", 0, 20, 0, key=f'{len(filelist):05d}_{colors}_{word}_stw')
+    def process_image(image, colors, words, gpx, gpy, gf, gfs, glx, gly, glz, stc, stw):
+        for word, px, py, f, fs, lx, ly, lz, sc, sw in zip(words, gpx, gpy, gf, gfs, glx, gly, glz, stc, stw):
 
             font = ImageFont.truetype(f, fs)
             text_bbox = draw.textbbox((0, 0), word, font=font)
@@ -43,7 +41,7 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
             text_y = (h - text_height) * 0.5 + py
 
             draw.text((text_x, text_y),
-                    text=word, stroke_fill=stc, stroke_width=stw, fill=fc, font=font, anchor='lt')
+                    text=word, stroke_fill=sc, stroke_width=sw, fill=fc, font=font, anchor='lt')
 
             if logo_path:
                 for logo_file in logo_path:
@@ -62,28 +60,42 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
 
         for word in words:
             with global_settings:
-                gpx.append(st.slider(f"Pad x : {word}", -500, 500, 0, 10, key=f'{len(filelist):05d}_{word}_gpx'))
-                gpy.append(st.slider(f"Pad y : {word}", -500, 500, 100, 10, key=f'{len(filelist):05d}_{word}_gpy'))
-                gfs.append(st.slider(f"Font size : {word}", 0, 2560, 100, 8, key=f'{len(filelist):05d}_{word}_gfs'))
-                gf.append(st.sidebar.selectbox(f"Font : {word}", fontlist, key=f'{len(filelist):05d}_{word}_gf'))
-                glx.append(st.slider("Logo x", -w, w, 0, 10, key=f'{len(filelist):05d}_{word}_glx'))
-                gly.append(st.slider("Logo y", -h, h, 0, 10, key=f'{len(filelist):05d}_{word}_gly'))
+                gpx.append(st.slider(f"Pad x : \"{word}\"", -500, 500, 0, 10, key=f'{len(filelist):05d}_{word}_gpx'))
+                gpy.append(st.slider(f"Pad y : \"{word}\"", -500, 500, 100, 10, key=f'{len(filelist):05d}_{word}_gpy'))
+                gfs.append(st.slider(f"Font size : \"{word}\"", 0, 2560, 100, 8, key=f'{len(filelist):05d}_{word}_gfs'))
+                gf.append(st.sidebar.selectbox(f"Font : \"{word}\"", fontlist, key=f'{len(filelist):05d}_{word}_gf'))
+                glx.append(st.slider(f"Logo x: \"{word}\"", -w, w, 0, 10, key=f'{len(filelist):05d}_{word}_glx'))
+                gly.append(st.slider(f"Logo y: \"{word}\"", -h, h, 0, 10, key=f'{len(filelist):05d}_{word}_gly'))
                 glz.append(st.slider("Logo Zoom", 0.05, 20.0, 0.20, 0.01, key=f'{len(filelist):05d}_{word}_glz'))
+                stc.append(st.text_input(f"Stroke fill: \"{word}\"", "gray", key=f'{len(filelist):05d}_{word}_stc'))
+                stw.append(st.slider(f"Stroke width: \"{word}\"", 0, 20, 0, key=f'{len(filelist):05d}_{word}_stw'))
 
-        # with st.expander(f"Settings: {words}"):
-        #     fs = st.slider("Fontsize", 0, 1256, gfs, 8, key=f'{len(filelist):05d}_{words}_fs')
         for colors in colorlist:
             bc, fc = colors
             image = Image.new("RGB", (w, h), color=bc)
             draw = ImageDraw.Draw(image)
 
-            image = process_image(image, colors, words, gpx, gpy, gf, gfs, glx, gly, glz)
+            image = process_image(image, colors, words, gpx, gpy, gf, gfs, glx, gly, glz, stc, stw)
 
             out_name = f"{len(filelist):05d}{ext}"
             temp_image_path = os.path.join(subfolder_path, out_name)
             image.save(temp_image_path)
-            st.image(image, caption=os.path.basename(temp_image_path), use_column_width=True)
             filelist.append(temp_image_path)
+
+    preview_image = []
+
+    if preview_button:
+        preview_image = filelist
+    else:
+        preview_image.append(filelist[0])
+
+    if gridview_button:
+        for idx, img in enumerate(preview_image):
+            cols[idx % grid_col].image(img, caption=os.path.basename(preview_image[idx]), use_column_width=True)
+    else:
+        for idx, img in enumerate(preview_image):
+            st.image(img, caption=os.path.basename(preview_image[idx]), use_column_width=True)
+
 
     return filelist
 
@@ -100,6 +112,16 @@ def main():
     ]
 
     st.title("Logo Maker Web UI")
+    preview_button = st.sidebar.checkbox("Preview All")
+    gridview_button = st.sidebar.checkbox("Grid View")
+    # select_shape = st.sidebar.multiselect("Shape", ["Circle","RoundRect"])
+    if gridview_button:
+        grid_col = st.sidebar.slider("Grid Col",1,8,2)
+
+    else:
+        grid_col = 1
+    cols = st.columns(grid_col)
+
     st.sidebar.title("Settings")
     colorlist_input = st.sidebar.text_area("Enter color list (split like c1;c2;..,newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in _colorlist]))
     colorlist = [tuple(line.split(';')) for line in colorlist_input.splitlines() if line.strip()]
@@ -154,8 +176,7 @@ def main():
 
     current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     size = f"{w}x{h}"
-    gpx, gpy, gf, gfs, glx, gly, glz = [],[],[],[],[],[],[]
-
+    gpx, gpy, gf, gfs, glx, gly, glz, stc, stw = [],[],[],[],[],[],[],[],[]
     export_data = {
         'colorlist': colorlist,
         'wordlist': wordlist,
@@ -171,8 +192,10 @@ def main():
         'default_logo_x': glx,
         'default_logo_y': gly,
         'default_logo_zoom': glz,
+        'default_stroke_color': stc,
+        'default_stroke_width': stw,
     }
-    filelist = generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, temp_path, logo_path, global_settings)
+    filelist = generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, global_settings, preview_button, gridview_button, grid_col, cols)
 
     export_path = os.path.join(temp_path, 'settings.json')
     export_settings(export_data, export_path)
