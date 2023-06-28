@@ -185,7 +185,8 @@ def main():
         'size': size,
         'width': w,
         'height': h,
-        'fontsize': gfs,
+        'font': f,
+        'default_fontsize': gfs,
     }
 
     export_path = os.path.join(temp_path, 'settings.json')
