@@ -208,6 +208,8 @@ def main():
     gen_gif = st.sidebar.checkbox("GIF Animation")
     if gen_gif:
         delay = st.sidebar.slider("Delay", 0, 5000, 0, 100)
+    else:
+        delay = 0
 
     if gen_qr:
         _qr_text = st.sidebar.text_area("QR text", "example.com")
