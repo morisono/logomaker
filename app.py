@@ -257,7 +257,7 @@ def main():
     zip_path = create_zip(save_as_path, filelist)
     st.sidebar.download_button("Download (.zip)", data=zip_path, file_name=save_as_path)
 
-    clear_temp_folder(temp_path)
+    # clear_temp_folder(temp_path)
 
 if __name__ == "__main__":
     main()
