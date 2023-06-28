@@ -211,12 +211,6 @@ def main():
     else:
         delay = 0
 
-    if gen_qr:
-        _qr_text = st.sidebar.text_area("QR text", "example.com")
-    else:
-        _qr_text = ""
-    qr_text = [line for line in _qr_text.splitlines() if line.strip()]
-
     # exts = Image.registered_extensions()
     # ext = st.sidebar.selectbox("File Format", {ex for ex, f in exts.items() if f in Image.OPEN})
     ext = st.sidebar.selectbox("File Format", [".png",".jpg",".tiff", ".gif", ".eps",".ico", ".webp"])
