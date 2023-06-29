@@ -1,0 +1,41 @@
+{
+  "timestamp": "20230101_000000",
+  "size": "1500x500",
+  "width": 1500,
+  "height": 500,
+  "shape": [],
+  "font": [],
+  "font_x": [],
+  "font_y": [],
+  "font_z": [],
+  "logo_x": [],
+  "logo_y": [],
+  "logo_z": [],
+  "stroke_fill": [],
+  "stroke_width": [],
+  "colorlist": [
+    [
+      "red",
+      "blue"
+    ],
+    [
+      "green",
+      "black"
+    ],
+    [
+      "yellow",
+      "white"
+    ],
+    [
+      "cyan",
+      "magenta"
+    ]
+  ],
+  "wordlist": [
+    [
+      "Designed by",
+      "m.s."
+    ]
+  ],
+  "logolist": []
+}
