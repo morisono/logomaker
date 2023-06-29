@@ -19,7 +19,7 @@ st.set_page_config(
 hide_ft_style()
 
 
-def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, gen_gif, delay,  qr_text, global_settings, preview_button, gridview_button, grid_col, cols):
+def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, gen_gif, delay, qr_text, draw_settings, preview_button, gridview_button, grid_col, cols, shape, r, cx, cy, rx, ry, m):
     def process_logo(image, lx, ly, lz):
         for lx, ly, lz, logo_file in zip(glx, gly, glz, logo_path):
             logo_image = Image.open(logo_file).convert("RGBA")
@@ -41,7 +41,7 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
             text_y = (h - text_height) * 0.5 + py
 
             draw.text((text_x, text_y),
-                    text=word, stroke_fill=sc, stroke_width=sw, fill=fc, font=font, anchor='lm')
+                        text=word, stroke_fill=sc, stroke_width=sw, fill=fc, font=font, anchor='lm')
         return image
 
     def process_qr(image, qr_text):
@@ -81,22 +81,39 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
     for words in wordlist:
 
         for word in words:
-            with global_settings:
+            with draw_settings:
                 gpx.append(st.slider(f"Pad x : \"{word}\"", -500, 500, 0, 10, key=f'{len(filelist):05d}_{word}_gpx'))
                 gpy.append(st.slider(f"Pad y : \"{word}\"", -500, 500, 0, 10, key=f'{len(filelist):05d}_{word}_gpy'))
                 gfs.append(st.slider(f"Font size : \"{word}\"", 0, 800, 100, 8, key=f'{len(filelist):05d}_{word}_gfs'))
-                gf.append(st.sidebar.selectbox(f"Font : \"{word}\"", fontlist, key=f'{len(filelist):05d}_{word}_gf'))
+                gf.append(st.selectbox(f"Font : \"{word}\"", fontlist, key=f'{len(filelist):05d}_{word}_gf'))
                 glz.append(st.slider("Logo Zoom", 0.05, 4.0, 0.20, 0.01, key=f'{len(filelist):05d}_{word}_glz'))
                 stc.append(st.text_input(f"Stroke fill: \"{word}\"", "gray", key=f'{len(filelist):05d}_{word}_stc'))
                 stw.append(st.slider(f"Stroke width: \"{word}\"", 0, 20, 0, key=f'{len(filelist):05d}_{word}_stw'))
 
     for colors in colorlist:
         bc, fc = colors
-        image = Image.new("RGB", (w, h), color=bc)
+        image = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
+        for sh in shape:
+            if sh == "fill":
+                draw.rectangle((0, 0, w, h), fill=bc)
+            elif sh == "circle":
+                r = 50
+                cx, cy = w * 0.5, h * 0.5
+                draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=bc, outline=None)
+            elif sh == "roundrect":
+                rx, ry = 0, 0
+                r = 20
+                draw.rounded_rectangle((rx, ry, rx + w, ry + h), r, fill=bc, outline=None)
+            elif sh == "frame":
+                margin = 20
+                frame_width = 5
+                draw.rectangle((margin, margin, w - margin, h - margin), fill=bc, outline=fc, width=frame_width)
+
+
 
         if logo_path:
-            with global_settings:
+            with draw_settings:
                 glx.append(st.slider(f"Logo x: \"{word}\"", -w, w, 0, 10, key=f'{len(filelist):05d}_{word}_glx'))
                 gly.append(st.slider(f"Logo y: \"{word}\"", -h, h, 0, 10, key=f'{len(filelist):05d}_{word}_gly'))
             image = process_logo(image, glx, gly, glz)
@@ -134,10 +151,10 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
 
 def main():
     _colorlist = [
-        ("black", "white"),
-        ("cyan", "magenta"),
         ("red", "blue"),
-        ("green", "yellow")
+        ("green", "black"),
+        ("yellow", "white"),
+        ("cyan", "magenta"),
     ]
     _wordlist = [
         ("Designed by", "m.s."),
@@ -146,7 +163,7 @@ def main():
     st.title("Logo Maker Web UI")
     preview_button = st.sidebar.checkbox("Preview All")
     gridview_button = st.sidebar.checkbox("Grid View")
-    # select_shape = st.sidebar.multiselect("Shape", ["Circle","RoundRect"])
+
     if gridview_button:
         grid_col = st.sidebar.slider("Grid Col",1,8,2)
 
@@ -178,78 +195,102 @@ def main():
         "1:2 (640, 1280)": (640, 1280),
         "2:3 960, 1440)": (960, 1440),
     }
-    size_selected = st.sidebar.selectbox("Size Preset", list(size_preset.keys()))
-    if size_selected:
-        preset_size = size_preset[size_selected]
-        w, h = preset_size
 
-    global_settings = st.sidebar.expander("Global Settings")
-    with global_settings:
+
+    draw_settings = st.sidebar.expander("Draw Settings")
+    with draw_settings:
+        size_selected = st.selectbox("Size Preset", list(size_preset.keys()))
+        if size_selected:
+            preset_size = size_preset[size_selected]
+            w, h = preset_size
         w = st.slider("Width", 0, 2560, w, 8)
         h = st.slider("Height", 0, 2560, h, 8)
 
-    logolist = []
-    # logo_path = 'images/logo'
-    # for filename in os.listdir(logo_path):
-    #     if filename.endswith(".png"):
-    #         logolist.append(os.path.join(logo_path, filename))
-    # logo = st.sidebar.selectbox("Logo", logolist)
-    logo = st.sidebar.file_uploader("Logo Image", accept_multiple_files=True)
-    logo_path = logo if logo else [].append(logolist)
-    temp_path = tempfile.gettempdir()
+        shape = st.multiselect('Shape', ["fill", "circle", "roundrect", "frame"])
+        r, cx, cy, rx, ry, m = 0,0,0,0,0,0
+        if shape:
+            if "circle" in shape:
+                r = st.slider("Circle Radius", 1, 100, 50)
+                cx = st.slider("Circle Center X", 0, w, int(w *0.5))
+                cy = st.slider("Circle Center Y", 0, h, int(h *0.5))
 
-    gen_qr = st.sidebar.checkbox("QR")
-    if gen_qr:
-        _qr_text = st.sidebar.text_area("QR text", "example.com")
-    else:
-        _qr_text = ""
-    qr_text = [line for line in _qr_text.splitlines() if line.strip()]
+            elif "roundrect" in shape:
+                rx = st.slider("Round Rectangle X", 0, w, int(w *0.5))
+                ry = st.slider("Round Rectangle Y", 0, h, int(h *0.5))
 
-    gen_gif = st.sidebar.checkbox("GIF Animation")
-    if gen_gif:
-        delay = st.sidebar.slider("Delay", 0, 5000, 0, 100)
-    else:
-        delay = 0
+            elif "frame" in shape:
+                m = st.slider("Frame margin", 0, min(w, h)//2, m)
 
-    # exts = Image.registered_extensions()
-    # ext = st.sidebar.selectbox("File Format", {ex for ex, f in exts.items() if f in Image.OPEN})
-    ext = st.sidebar.selectbox("File Format", [".png",".jpg",".tiff", ".gif", ".eps",".ico", ".webp"])
+    insert_settings = st.sidebar.expander("Insert Settings")
+    with insert_settings:
+        logolist = []
+        # logo_path = 'images/logo'
+        # for filename in os.listdir(logo_path):
+        #     if filename.endswith(".png"):
+        #         logolist.append(os.path.join(logo_path, filename))
+        # logo = st.sidebar.selectbox("Logo", logolist)
+        logo = st.file_uploader("Logo Image", accept_multiple_files=True)
+        logo_path = logo if logo else [].append(logolist)
+        temp_path = tempfile.gettempdir()
 
-    # generate = st.sidebar.button("Generate GIF")
-    # if generate:
+        gen_qr = st.checkbox("QR")
+        if gen_qr:
+            _qr_text = st.text_area("QR text", "example.com")
+        else:
+            _qr_text = ""
+        qr_text = [line for line in _qr_text.splitlines() if line.strip()]
+
+        gen_gif = st.checkbox("GIF Animation")
+        if gen_gif:
+            delay = st.slider("Delay", 0, 5000, 0, 100)
+        else:
+            delay = 0
 
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     size = f"{w}x{h}"
     gpx, gpy, gf, gfs, glx, gly, glz, stc, stw = [],[],[],[],[],[],[],[],[]
-    export_data = {
-        'timestamp': timestamp,
-        'size': size,
-        'width': w,
-        'height': h,
-        'font': gf,
-        'default_x': gpx,
-        'default_y': gpy,
-        'default_fontsize': gfs,
-        'default_logo_x': glx,
-        'default_logo_y': gly,
-        'default_logo_zoom': glz,
-        'default_stroke_color': stc,
-        'default_stroke_width': stw,
-        'colorlist': colorlist,
-        'wordlist': wordlist,
-        'logolist': logolist,
-    }
-    filelist = generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, gen_gif, delay,  qr_text, global_settings, preview_button, gridview_button, grid_col, cols)
 
-    export_path = os.path.join(temp_path, 'settings.json')
-    export_settings(export_data, export_path)
-    st.sidebar.download_button("Export settings (.json)", data=open
-    (export_path, 'rb').read(), file_name=export_path)
+    output_settings = st.sidebar.expander("Output Settings")
+    with output_settings:
+        # exts = Image.registered_extensions()
+        # ext = st.sidebar.selectbox("File Format", {ex for ex, f in exts.items() if f in Image.OPEN})
 
-    save_as_path = "outputs.zip"
-    zip_path = create_zip(save_as_path, filelist)
-    st.sidebar.download_button("Download (.zip)", data=zip_path, file_name=save_as_path)
+        # generate = st.button("Generate GIF")
+        # if generate:
+        ext = st.selectbox("File Format", [".png",".jpg",".tiff", ".gif", ".eps",".ico", ".webp"])
+
+    filelist = generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, gen_gif, delay,  qr_text, draw_settings, preview_button, gridview_button, grid_col, cols, shape, r, cx, cy, rx, ry, m)
+
+    with output_settings:
+        export_data = {
+            'timestamp': timestamp,
+            'size': size,
+            'width': w,
+            'height': h,
+            'shape': shape,
+            'font': gf,
+            'default_x': gpx,
+            'default_y': gpy,
+            'default_fontsize': gfs,
+            'default_logo_x': glx,
+            'default_logo_y': gly,
+            'default_logo_zoom': glz,
+            'default_stroke_color': stc,
+            'default_stroke_width': stw,
+            'colorlist': colorlist,
+            'wordlist': wordlist,
+            'logolist': logolist,
+        }
+        export_path = os.path.join(temp_path, 'settings.json')
+        export_settings(export_data, export_path)
+        st.download_button("Export settings (.json)", data=open
+        (export_path, 'rb').read(), file_name=export_path)
+
+        save_as_path = "outputs.zip"
+        zip_path = create_zip(save_as_path, filelist)
+        st.download_button("Download (.zip)", data=zip_path, file_name=save_as_path)
+
 
     # clear_temp_folder(temp_path)
 
