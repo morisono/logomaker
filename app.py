@@ -47,9 +47,9 @@ def generate_images(temp_path, draw_settings, **params):
 
     def process_qr(image, qr_text):
         for qr in qr_text:
-            qr_size = h * 0.01 if h < w else w * 0.01
+            qr_size = params['height'] * 0.01 if params['height'] < params['width'] else params['width'] * 0.01
             qr_border =  qr_size * 0.2
-            qr_position = (int(w-30*qr_size),  int(h-30*qr_size))
+            qr_position = (int(params['width']-30*qr_size),  int(params['height']-30*qr_size))
             qr_image = generate_qr(qr, qr_size, qr_border)
             image.paste(qr_image, qr_position)
         return image
@@ -88,41 +88,41 @@ def generate_images(temp_path, draw_settings, **params):
                 params['logo_z'].append(st.slider("Logo Zoom", 0.05, 4.0, 0.20, 0.01, key=f'{unique_key}_logo_z'))
                 params['stroke_fill'].append(st.text_input(f"Stroke fill: \"{word}\"", "gray", key=f'{unique_key}_stroke_fill'))
                 params['stroke_width'].append(st.slider(f"Stroke width: \"{word}\"", 0, 20, 0, key=f'{unique_key}_stroke_width'))
+# TODO
+    for colors in params['colorlist']:
+            bc, fc = colors
+            image = Image.new("RGBA", (params['width'], params['height']), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(image)
+            for sh in params['shape']:
+                if sh == "fill":
+                    draw.rectangle((0, 0, params['width'], params['height']), fill=bc)
+                elif sh == "circle":
+                    params['r'] = 50
+                    params['cx'], params['cy'] = params['width'] * 0.5, params['height'] * 0.5
+                    draw.ellipse((params['cx'] - params['r'], params['cy'] - params['r'], params['cx'] + params['r'], params['cy'] + r), fill=bc, outline=None)
+                elif sh == "roundrect":
+                    params['rx'], params['ry'] = 0, 0
+                    params['r'] = 20
+                    draw.rounded_rectangle((params['rx'], params['ry'], params['rx'] + params['width'], params['ry'] + params['h']), params['r'], fill=bc, outline=None)
+                elif sh == "frame":
+                    params['margin'] = 20
+                    params['frame_width'] = 5
+                    draw.rectangle((params['margin'], params['margin'], params['width'] - params['margin'], params['height'] - params['margin']), fill=bc, outline=fc, width=frame_width)
 
-            for colors in params['colorlist']:
-                bc, fc = colors
-                image = Image.new("RGBA", (params['width'], params['height']), (0, 0, 0, 0))
-                draw = ImageDraw.Draw(image)
-                for sh in params['shape']:
-                    if sh == "fill":
-                        draw.rectangle((0, 0, params['width'], params['height']), fill=bc)
-                    elif sh == "circle":
-                        params['r'] = 50
-                        params['cx'], params['cy'] = params['width'] * 0.5, params['height'] * 0.5
-                        draw.ellipse((params['cx'] - params['r'], params['cy'] - params['r'], params['cx'] + params['r'], params['cy'] + r), fill=bc, outline=None)
-                    elif sh == "roundrect":
-                        params['rx'], params['ry'] = 0, 0
-                        params['r'] = 20
-                        draw.rounded_rectangle((params['rx'], params['ry'], params['rx'] + params['width'], params['ry'] + params['h']), params['r'], fill=bc, outline=None)
-                    elif sh == "frame":
-                        params['margin'] = 20
-                        params['frame_width'] = 5
-                        draw.rectangle((params['margin'], params['margin'], params['width'] - params['margin'], params['height'] - params['margin']), fill=bc, outline=fc, width=frame_width)
+            if params['logo_path']:
+                with draw_settings:
+                    params['logo_x'].append(st.slider(f"Logo x: \"{word}\"", -params['width'], params['width'], 0, 10, key=f'{unique_key}_logo_x'))
+                    params['logo_y'].append(st.slider(f"Logo y: \"{word}\"", -params['height'], params['height'], 0, 10, key=f'{unique_key}_logo_y'))
+                image = process_logo(image)
+            image = process_image(image)
 
-                if params['logo_path']:
-                    with draw_settings:
-                        params['logo_x'].append(st.slider(f"Logo x: \"{word}\"", -params['width'], params['width'], 0, 10, key=f'{unique_key}_logo_x'))
-                        params['logo_y'].append(st.slider(f"Logo y: \"{word}\"", -params['height'], params['height'], 0, 10, key=f'{unique_key}_logo_y'))
-                    image = process_logo(image)
-                image = process_image(image)
+            if params['gen_qr']:
+                image = process_qr(image, params['qr_text'])
 
-                if params['gen_qr']:
-                    image = process_qr(image, params['qr_text'])
-
-                out_name = f"{len(params['filelist']):05d}{params['ext']}"
-                temp_image_path = os.path.join(subfolder_path, out_name)
-                image.save(temp_image_path)
-                params['filelist'].append(temp_image_path)
+            out_name = f"{len(params['filelist']):05d}{params['ext']}"
+            temp_image_path = os.path.join(subfolder_path, out_name)
+            image.save(temp_image_path)
+            params['filelist'].append(temp_image_path)
 
     if params['gen_gif']:
         images_path = subfolder_path
