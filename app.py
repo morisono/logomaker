@@ -6,11 +6,12 @@ from PIL import Image, ImageDraw, ImageFont
 import tempfile
 import matplotlib.font_manager as fm
 import uuid
-from modules.common import load_ui_config, create_zip, export_settings, generate_qr, clear_temp_folder
+from modules.common import load_settings, load_ui_config, create_zip, export_settings, generate_qr, clear_temp_folder
 from modules.ui import hide_ft_style
 
 
 load_ui_config()
+load_settings()
 st.set_page_config(
     page_title=st.session_state['page_title'],
     page_icon=st.session_state['page_icon'],
@@ -19,9 +20,9 @@ st.set_page_config(
 hide_ft_style()
 
 
-def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, gen_gif, delay, qr_text, draw_settings, preview_button, gridview_button, grid_col, cols, shape, r, cx, cy, rx, ry, m):
-    def process_logo(image, lx, ly, lz):
-        for lx, ly, lz, logo_file in zip(glx, gly, glz, logo_path):
+def generate_images(temp_path, draw_settings, **params):
+    def process_logo(image):
+        for lx, ly, lz, logo_file in zip(params['font_x'], params['font_y'], params['font_z'], params['logo_path']):
             logo_image = Image.open(logo_file).convert("RGBA")
             logo_w, logo_h = logo_image.size
             resized_logo_w = int(logo_w * lz)
@@ -30,15 +31,15 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
             image.paste(resized_logo, (lx, ly), mask=resized_logo)
             return image
 
-    def process_image(image, words, gpx, gpy, gf, gfs, stc, stw):
-        for word, px, py, f, fs, sc, sw in zip(words, gpx, gpy, gf, gfs, stc, stw):
+    def process_image(image):
+        for word, px, py, f, fs, sc, sw in zip(words, params['font_x'], params['font_y'], params['font'], params['font_z'], params['stroke_fill'], params['stroke_width']):
 
             font = ImageFont.truetype(f, fs)
             text_bbox = draw.textbbox((0, 0), word, font=font)
             text_width = text_bbox[2] - text_bbox[0]
             text_height = text_bbox[3] - text_bbox[1]
-            text_x = (w - text_width) * 0.5 + px
-            text_y = (h - text_height) * 0.5 + py
+            text_x = (params['width'] - text_width) * 0.5 + px
+            text_y = (params['height'] - text_height) * 0.5 + py
 
             draw.text((text_x, text_y),
                         text=word, stroke_fill=sc, stroke_width=sw, fill=fc, font=font, anchor='lm')
@@ -65,140 +66,111 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
 
         return image
 
-    filelist, fontlist, preview_image = [],[],[]
     os.makedirs(temp_path, exist_ok=True)
-    for words in wordlist:
+    for words in params['wordlist']:
         subfolder_path = os.path.join(temp_path, f"{words}")
         os.makedirs(subfolder_path, exist_ok=True)
 
     # font_paths = fm.findSystemFonts()
     # fontlist = [os.path.splitext(os.path.basename(font_path))[0] for font_path in font_paths]
-    font_path = 'fonts'
-    for filename in os.listdir(font_path):
+    for filename in os.listdir(params['font_path']):
         if filename.endswith(".ttf"):
-            fontlist.append(os.path.join(font_path, filename))
+            params['fontlist'].append(os.path.join(params['font_path'], filename))
 
-    for words in wordlist:
-        for word in words:
+    for i, words in enumerate(params['wordlist']):
+        for j, word in enumerate(words):
             unique_key = str(uuid.uuid4())
             with draw_settings:
-                gpx.append(st.slider(f"Pad x : \"{word}\"", -500, 500, 0, 10, key=f'{unique_key}_gpx'))
-                gpy.append(st.slider(f"Pad y : \"{word}\"", -500, 500, 0, 10, key=f'{unique_key}_gpy'))
-                gfs.append(st.slider(f"Font size : \"{word}\"", 0, 800, 100, 8, key=f'{unique_key}_gfs'))
-                gf.append(st.selectbox(f"Font : \"{word}\"", fontlist, key=f'{unique_key}_gf'))
-                glz.append(st.slider("Logo Zoom", 0.05, 4.0, 0.20, 0.01, key=f'{unique_key}_glz'))
-                stc.append(st.text_input(f"Stroke fill: \"{word}\"", "gray", key=f'{unique_key}_stc'))
-                stw.append(st.slider(f"Stroke width: \"{word}\"", 0, 20, 0, key=f'{unique_key}_stw'))
+                params['font_x'].append(st.slider(f"Pad x : \"{word}\"", -500, 500, 0, 10, key=f'{unique_key}_font_x'))
+                params['font_y'].append(st.slider(f"Pad y : \"{word}\"", -500, 500, 0, 10, key=f'{unique_key}_font_y'))
+                params['font_z'].append(st.slider(f"Font size : \"{word}\"", 0, 800, 100, 8, key=f'{unique_key}_font_z'))
+                params['font'].append(st.selectbox(f"Font : \"{word}\"", params['fontlist'], key=f'{unique_key}_font'))
+                params['logo_z'].append(st.slider("Logo Zoom", 0.05, 4.0, 0.20, 0.01, key=f'{unique_key}_logo_z'))
+                params['stroke_fill'].append(st.text_input(f"Stroke fill: \"{word}\"", "gray", key=f'{unique_key}_stroke_fill'))
+                params['stroke_width'].append(st.slider(f"Stroke width: \"{word}\"", 0, 20, 0, key=f'{unique_key}_stroke_width'))
 
-        for colors in colorlist:
-            bc, fc = colors
-            image = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-            draw = ImageDraw.Draw(image)
-            for sh in shape:
-                if sh == "fill":
-                    draw.rectangle((0, 0, w, h), fill=bc)
-                elif sh == "circle":
-                    r = 50
-                    cx, cy = w * 0.5, h * 0.5
-                    draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=bc, outline=None)
-                elif sh == "roundrect":
-                    rx, ry = 0, 0
-                    r = 20
-                    draw.rounded_rectangle((rx, ry, rx + w, ry + h), r, fill=bc, outline=None)
-                elif sh == "frame":
-                    margin = 20
-                    frame_width = 5
-                    draw.rectangle((margin, margin, w - margin, h - margin), fill=bc, outline=fc, width=frame_width)
+            for colors in params['colorlist']:
+                bc, fc = colors
+                image = Image.new("RGBA", (params['width'], params['height']), (0, 0, 0, 0))
+                draw = ImageDraw.Draw(image)
+                for sh in params['shape']:
+                    if sh == "fill":
+                        draw.rectangle((0, 0, params['width'], params['height']), fill=bc)
+                    elif sh == "circle":
+                        params['r'] = 50
+                        params['cx'], params['cy'] = params['width'] * 0.5, params['height'] * 0.5
+                        draw.ellipse((params['cx'] - params['r'], params['cy'] - params['r'], params['cx'] + params['r'], params['cy'] + r), fill=bc, outline=None)
+                    elif sh == "roundrect":
+                        params['rx'], params['ry'] = 0, 0
+                        params['r'] = 20
+                        draw.rounded_rectangle((params['rx'], params['ry'], params['rx'] + params['width'], params['ry'] + params['h']), params['r'], fill=bc, outline=None)
+                    elif sh == "frame":
+                        params['margin'] = 20
+                        params['frame_width'] = 5
+                        draw.rectangle((params['margin'], params['margin'], params['width'] - params['margin'], params['height'] - params['margin']), fill=bc, outline=fc, width=frame_width)
 
+                if params['logo_path']:
+                    with draw_settings:
+                        params['logo_x'].append(st.slider(f"Logo x: \"{word}\"", -params['width'], params['width'], 0, 10, key=f'{unique_key}_logo_x'))
+                        params['logo_y'].append(st.slider(f"Logo y: \"{word}\"", -params['height'], params['height'], 0, 10, key=f'{unique_key}_logo_y'))
+                    image = process_logo(image)
+                image = process_image(image)
 
+                if params['gen_qr']:
+                    image = process_qr(image, params['qr_text'])
 
-            if logo_path:
-                with draw_settings:
-                    glx.append(st.slider(f"Logo x: \"{word}\"", -w, w, 0, 10, key=f'{unique_key}_glx'))
-                    gly.append(st.slider(f"Logo y: \"{word}\"", -h, h, 0, 10, key=f'{unique_key}_gly'))
-                image = process_logo(image, glx, gly, glz)
-            image = process_image(image, words, gpx, gpy, gf, gfs, stc, stw)
+                out_name = f"{len(params['filelist']):05d}{params['ext']}"
+                temp_image_path = os.path.join(subfolder_path, out_name)
+                image.save(temp_image_path)
+                params['filelist'].append(temp_image_path)
 
-            if gen_qr:
-                image = process_qr(image, qr_text)
-
-            out_name = f"{len(filelist):05d}{ext}"
-            temp_image_path = os.path.join(subfolder_path, out_name)
-            image.save(temp_image_path)
-            filelist.append(temp_image_path)
-
-    if gen_gif:
+    if params['gen_gif']:
         images_path = subfolder_path
         gif_path =  'output.gif'
-        image = generate_gif(images_path, delay, 0, gif_path)
+        image = generate_gif(images_path, params['delay'], 0, gif_path)
         st.image(gif_path)
 
-    if preview_button:
-        preview_image = filelist
+    if params['gen_preview']:
+        params['preview_image'] = params['filelist']
     else:
-        preview_image.append(filelist[0])
+        params['preview_image'].append(params['filelist'][0])
 
-    if gridview_button:
-        for idx, img in enumerate(preview_image):
-            cols[idx % grid_col].image(img, caption=os.path.basename(preview_image[idx]), use_column_width=True)
+    if params['gen_gridview']:
+        for idx, img in enumerate(params['preview_image']):
+            params['cols'][idx % params['grid_col']].image(img, caption=os.path.basename(params['preview_image'][idx]), use_column_width=True)
     else:
-        for idx, img in enumerate(preview_image):
-            st.image(img, caption=os.path.basename(preview_image[idx]), use_column_width=True)
+        for idx, img in enumerate(params['preview_image']):
+            st.image(img, caption=os.path.basename(params['preview_image'][idx]), use_column_width=True)
 
-
-    return filelist
+    return params['filelist']
 
 
 def main():
-    _colorlist = [
-        ("red", "blue"),
-        ("green", "black"),
-        ("yellow", "white"),
-        ("cyan", "magenta"),
-    ]
-    _wordlist = [
-        ("Designed by", "m.s."),
-    ]
+    title = st.title("Logo Maker Web UI")
 
-    st.title("Logo Maker Web UI")
-    preview_button = st.sidebar.checkbox("Preview All")
-    gridview_button = st.sidebar.checkbox("Grid View")
+    settings = st.sidebar.title("Settings")
+    input_settings = st.sidebar.expander("Input Settings")
+    with input_settings:
+        colorlist = st.session_state['colorlist']
+        colors = st.text_area("Enter color list (split like c1;c2;.., newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in colorlist]))
+        colorlist = [tuple(line.split(';')) for line in colors.splitlines() if line.strip()]
 
-    if gridview_button:
-        grid_col = st.sidebar.slider("Grid Col",1,8,2)
+        wordlist = st.session_state['wordlist']
+        words = st.text_area("Enter word list (split like w1;w2;..,newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in wordlist]))
+        wordlist = [tuple(line.split(';')) for line in words.splitlines() if line.strip()]
 
-    else:
+    view_settings = st.sidebar.expander("View Settings")
+    with view_settings:
+        gen_preview = st.checkbox("Preview All")
+        gen_gridview = st.checkbox("Grid View")
         grid_col = 1
+        if gen_gridview:
+            grid_col = st.slider("Grid Col",1,8,2)
     cols = st.columns(grid_col)
-
-    st.sidebar.title("Settings")
-    _colorlist = st.sidebar.text_area("Enter color list (split like c1;c2;..,newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in _colorlist]))
-    colorlist = [tuple(line.split(';')) for line in _colorlist.splitlines() if line.strip()]
-
-    _wordlist = st.sidebar.text_area("Enter word list (split like w1;w2;..,newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in _wordlist]))
-    wordlist = [tuple(line.split(';')) for line in _wordlist.splitlines() if line.strip()]
-
-
-    size_preset = {
-        "Banner (1500, 500)": (1500, 500),
-        "2:1 (1024, 512)": (1024, 512),
-        "Square (1024, 1024)": (1024, 1024),
-        "WQHD (2560, 1440)": (2560, 1440),
-        "FHD (1920, 1080)": (1920, 1080),
-        "HD (1280, 720)": (1280, 720),
-        "4:3 (1280, 960)": (1280, 960),
-        "2:1 (1280, 640)": (1280, 640),
-        "3:2 (1440, 960)": (1440, 960),
-        "FHD vert (1080, 1920)": (1080, 1920),
-        "HD vert (720, 1280)": (720, 1280),
-        "3:4 (960, 1280)": (960, 1280),
-        "1:2 (640, 1280)": (640, 1280),
-        "2:3 960, 1440)": (960, 1440),
-    }
-
 
     draw_settings = st.sidebar.expander("Draw Settings")
     with draw_settings:
+        size_preset = st.session_state['size_preset']
         size_selected = st.selectbox("Size Preset", list(size_preset.keys()))
         if size_selected:
             preset_size = size_preset[size_selected]
@@ -206,8 +178,8 @@ def main():
         w = st.slider("Width", 0, 2560, w, 8)
         h = st.slider("Height", 0, 2560, h, 8)
 
-        shape = st.multiselect('Shape', ["fill", "circle", "roundrect", "frame"])
-        r, cx, cy, rx, ry, m = 0,0,0,0,0,0
+        shape = st.multiselect('Shape', ["fill", "circle", "roundrect", "frame"], default='fill')
+        r, cx, cy, rx, ry, margin = 0,0,0,0,0,0
         if shape:
             if "circle" in shape:
                 r = st.slider("Circle Radius", 1, 100, 50)
@@ -219,25 +191,23 @@ def main():
                 ry = st.slider("Round Rectangle Y", 0, h, int(h *0.5))
 
             elif "frame" in shape:
-                m = st.slider("Frame margin", 0, min(w, h)//2, m)
+                margin = st.slider("Frame margin", 0, min(w, h)//2, m)
 
     insert_settings = st.sidebar.expander("Insert Settings")
     with insert_settings:
-        logolist = []
         # logo_path = 'images/logo'
         # for filename in os.listdir(logo_path):
         #     if filename.endswith(".png"):
         #         logolist.append(os.path.join(logo_path, filename))
         # logo = st.sidebar.selectbox("Logo", logolist)
         logo = st.file_uploader("Logo Image", accept_multiple_files=True)
-        logo_path = logo if logo else [].append(logolist)
+        logo_path = logo if logo else [].append([])
         temp_path = tempfile.gettempdir()
 
         gen_qr = st.checkbox("QR")
+        _qr_text = ""
         if gen_qr:
             _qr_text = st.text_area("QR text", "example.com")
-        else:
-            _qr_text = ""
         qr_text = [line for line in _qr_text.splitlines() if line.strip()]
 
         gen_gif = st.checkbox("GIF Animation")
@@ -246,50 +216,65 @@ def main():
         else:
             delay = 0
 
-
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     size = f"{w}x{h}"
-    gpx, gpy, gf, gfs, glx, gly, glz, stc, stw = [],[],[],[],[],[],[],[],[]
 
     output_settings = st.sidebar.expander("Output Settings")
     with output_settings:
-        # exts = Image.registered_extensions()
-        # ext = st.sidebar.selectbox("File Format", {ex for ex, f in exts.items() if f in Image.OPEN})
+        ext = st.selectbox("File Format", st.session_state['ext'])
 
-        # generate = st.button("Generate GIF")
-        # if generate:
-        ext = st.selectbox("File Format", [".png",".jpg",".tiff", ".gif", ".eps",".ico", ".webp"])
+    params = {
+        'gen_qr': gen_qr,
+        'gen_gif': gen_gif,
+        'gen_preview': gen_preview,
+        'gen_gridview':gen_gridview,
+        'logo_path':st.session_state['logo_path'],
+        'filelist': st.session_state['filelist'],
+        'colorlist': colorlist,
+        'wordlist': wordlist,
+        'logolist': st.session_state['logolist'],
+        'ext': ext,
+        'size_preset': st.session_state['size_preset'],
+        'timestamp': timestamp,
+        'size': size,
+        'width': w,
+        'height': h,
+        'shape': shape,
+        'font': st.session_state['font'],
+        'font_x': st.session_state['font_x'],
+        'font_y': st.session_state['font_y'],
+        'font_z': st.session_state['font_z'],
+        'logo_x': st.session_state['logo_x'],
+        'logo_y': st.session_state['logo_y'],
+        'logo_z': st.session_state['logo_z'],
+        'stroke_fill': st.session_state['stroke_fill'],
+        'stroke_width': st.session_state['stroke_width'],
+        'grid_col': grid_col,
+        'cols': cols,
+        'r': r,
+        'cx': cx,
+        'cy': cy,
+        'rx': rx,
+        'ry': ry,
+        'margin': margin,
+        'qr_text': qr_text,
+        'delay': delay,
+        'font_path': st.session_state['font_path'],
+        'fontlist': st.session_state['fontlist'],
+        'preview_image': st.session_state['preview_image'],
+    }
 
-    filelist = generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly, glz, stc, stw, temp_path, logo_path, gen_qr, gen_gif, delay,  qr_text, draw_settings, preview_button, gridview_button, grid_col, cols, shape, r, cx, cy, rx, ry, m)
+    filelist = generate_images(temp_path, draw_settings, **params)
 
     with output_settings:
-        export_data = {
-            'timestamp': timestamp,
-            'size': size,
-            'width': w,
-            'height': h,
-            'shape': shape,
-            'font': gf,
-            'default_x': gpx,
-            'default_y': gpy,
-            'default_fontsize': gfs,
-            'default_logo_x': glx,
-            'default_logo_y': gly,
-            'default_logo_zoom': glz,
-            'default_stroke_color': stc,
-            'default_stroke_width': stw,
-            'colorlist': colorlist,
-            'wordlist': wordlist,
-            'logolist': logolist,
-        }
-        export_path = os.path.join(temp_path, 'settings.json')
-        export_settings(export_data, export_path)
+        setting_fname = st.text_input("Output",'settings.json')
+        # export_settings(params, setting_fname)
         st.download_button("Export settings (.json)", data=open
-        (export_path, 'rb').read(), file_name=export_path)
+        (setting_fname, 'rb').read(), file_name=setting_fname)
 
-        save_as_path = "outputs.zip"
-        zip_path = create_zip(save_as_path, filelist)
-        st.download_button("Download (.zip)", data=zip_path, file_name=save_as_path)
+        zip_fname = "outputs.zip"
+        zip_path = create_zip(zip_fname, filelist)
+        st.download_button("Download (.zip)", data=zip_path, file_name=zip_fname)
 
 
     # clear_temp_folder(temp_path)

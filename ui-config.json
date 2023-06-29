@@ -1,6 +1,111 @@
 {
-    "page_title": "Dashboard",
-    "page_icon": ":smiley:",
-    "layout": "wide",
-    "export_data":[]
+  "page_title": "Dashboard",
+  "page_icon": ":smiley:",
+  "layout": "wide",
+  "font_path": "fonts",
+  "fontlist": [],
+  "colorlist": [
+    [
+      "red",
+      "blue"
+    ],
+    [
+      "green",
+      "black"
+    ],
+    [
+      "yellow",
+      "white"
+    ],
+    [
+      "cyan",
+      "magenta"
+    ]
+  ],
+  "wordlist": [
+    [
+      "Designed by",
+      "m.s."
+    ]
+  ],
+  "logolist": [],
+  "ext": [
+    ".png",
+    ".jpg",
+    ".tiff",
+    ".gif",
+    ".eps",
+    ".ico",
+    ".webp"
+  ],
+  "size_preset": {
+    "Banner (1500, 500)": [
+      1500,
+      500
+    ],
+    "2:1 (1024, 512)": [
+      1024,
+      512
+    ],
+    "Square (1024, 1024)": [
+      1024,
+      1024
+    ],
+    "WQHD (2560, 1440)": [
+      2560,
+      1440
+    ],
+    "FHD (1920, 1080)": [
+      1920,
+      1080
+    ],
+    "HD (1280, 720)": [
+      1280,
+      720
+    ],
+    "4:3 (1280, 960)": [
+      1280,
+      960
+    ],
+    "2:1 (1280, 640)": [
+      1280,
+      640
+    ],
+    "3:2 (1440, 960)": [
+      1440,
+      960
+    ],
+    "FHD vert (1080, 1920)": [
+      1080,
+      1920
+    ],
+    "HD vert (720, 1280)": [
+      720,
+      1280
+    ],
+    "3:4 (960, 1280)": [
+      960,
+      1280
+    ],
+    "1:2 (640, 1280)": [
+      640,
+      1280
+    ],
+    "2:3 (960, 1440)": [
+      960,
+      1440
+    ]
+  },
+  "examples": {
+    "colorlist": [
+      ["red", "blue"],
+      ["green", "black"],
+      ["yellow", "white"],
+      ["cyan", "magenta"]
+    ],
+    "wordlist": [
+      ["Designed by", "m.s."]
+    ]
+  },
+  "logo_path":[]
 }
