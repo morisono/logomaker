@@ -99,15 +99,13 @@ def generate_images(temp_path, draw_settings, **params):
             elif sh == "circle":
                 params['r'] = 50
                 params['cx'], params['cy'] = params['width'] * 0.5, params['height'] * 0.5
-                draw.ellipse((params['cx'] - params['r'], params['cy'] - params['r'], params['cx'] + params['r'], params['cy'] + r), fill=bc, outline=None)
+                draw.ellipse((params['cx'] - params['r'], params['cy'] - params['r'], params['cx'] + params['r'], params['cy'] + params['r']), fill=bc, outline=None)
             elif sh == "roundrect":
                 params['rx'], params['ry'] = 0, 0
                 params['r'] = 20
-                draw.rounded_rectangle((params['rx'], params['ry'], params['rx'] + params['width'], params['ry'] + params['h']), params['r'], fill=bc, outline=None)
+                draw.rounded_rectangle((params['rx'], params['ry'], params['rx'] + params['width'], params['ry'] + params['height']), params['r'], fill=bc, outline=None)
             elif sh == "frame":
-                params['margin'] = 20
-                params['frame_width'] = 5
-                draw.rectangle((params['margin'], params['margin'], params['width'] - params['margin'], params['height'] - params['margin']), fill=bc, outline=fc, width=frame_width)
+                draw.rectangle((params['margin'], params['margin'], params['width'] - params['margin'], params['height'] - params['margin']), fill=params['frame_fill'], outline=bc, width=params['frame_width'])
 
             if params['logo_path']:
                 with draw_settings:
@@ -171,7 +169,7 @@ def main():
         gen_gridview = st.checkbox("Grid View")
         grid_col = 1
         if gen_gridview:
-            grid_col = st.slider("Grid Col",1,8,4)
+            grid_col = st.slider("Grid Col",1,8,2)
     cols = st.columns(grid_col)
 
     draw_settings = st.sidebar.expander("Draw Settings")
@@ -197,7 +195,7 @@ def main():
                 ry = st.slider("Round Rectangle Y", 0, h, int(h *0.5))
 
             elif "frame" in shape:
-                margin = st.slider("Frame margin", 0, min(w, h)//2, m)
+                margin = st.slider("Frame margin", 0, min(w, h)//2, 50)
 
     insert_settings = st.sidebar.expander("Insert Settings")
     with insert_settings:
@@ -268,6 +266,8 @@ def main():
         'font_path': st.session_state['font_path'],
         'fontlist': st.session_state['fontlist'],
         'preview_image': st.session_state['preview_image'],
+        'frame_fill': st.session_state['frame_fill'],
+        'frame_width': st.session_state['frame_width'],
     }
 
     filelist = generate_images(temp_path, draw_settings, **params)
