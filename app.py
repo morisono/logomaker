@@ -66,10 +66,10 @@ def generate_images(temp_path, draw_settings, **params):
 
         return image
 
-    os.makedirs(temp_path, exist_ok=True)
-    for words in params['wordlist']:
-        subfolder_path = os.path.join(temp_path, f"{words}")
-        os.makedirs(subfolder_path, exist_ok=True)
+    # os.makedirs(temp_path, exist_ok=True)
+    # for words in params['wordlist']:
+        # subfolder_path = os.path.join(temp_path, f"{words}")
+        # os.makedirs(subfolder_path, exist_ok=True)
 
     # font_paths = fm.findSystemFonts()
     # fontlist = [os.path.splitext(os.path.basename(font_path))[0] for font_path in font_paths]
@@ -90,24 +90,24 @@ def generate_images(temp_path, draw_settings, **params):
                 params['stroke_width'].append(st.slider(f"Stroke width: \"{word}\"", 0, 20, 0, key=f'{unique_key}_stroke_width'))
 # TODO
     for colors in params['colorlist']:
-            bc, fc = colors
-            image = Image.new("RGBA", (params['width'], params['height']), (0, 0, 0, 0))
-            draw = ImageDraw.Draw(image)
-            for sh in params['shape']:
-                if sh == "fill":
-                    draw.rectangle((0, 0, params['width'], params['height']), fill=bc)
-                elif sh == "circle":
-                    params['r'] = 50
-                    params['cx'], params['cy'] = params['width'] * 0.5, params['height'] * 0.5
-                    draw.ellipse((params['cx'] - params['r'], params['cy'] - params['r'], params['cx'] + params['r'], params['cy'] + r), fill=bc, outline=None)
-                elif sh == "roundrect":
-                    params['rx'], params['ry'] = 0, 0
-                    params['r'] = 20
-                    draw.rounded_rectangle((params['rx'], params['ry'], params['rx'] + params['width'], params['ry'] + params['h']), params['r'], fill=bc, outline=None)
-                elif sh == "frame":
-                    params['margin'] = 20
-                    params['frame_width'] = 5
-                    draw.rectangle((params['margin'], params['margin'], params['width'] - params['margin'], params['height'] - params['margin']), fill=bc, outline=fc, width=frame_width)
+        bc, fc = colors
+        image = Image.new("RGBA", (params['width'], params['height']), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        for sh in params['shape']:
+            if sh == "fill":
+                draw.rectangle((0, 0, params['width'], params['height']), fill=bc)
+            elif sh == "circle":
+                params['r'] = 50
+                params['cx'], params['cy'] = params['width'] * 0.5, params['height'] * 0.5
+                draw.ellipse((params['cx'] - params['r'], params['cy'] - params['r'], params['cx'] + params['r'], params['cy'] + r), fill=bc, outline=None)
+            elif sh == "roundrect":
+                params['rx'], params['ry'] = 0, 0
+                params['r'] = 20
+                draw.rounded_rectangle((params['rx'], params['ry'], params['rx'] + params['width'], params['ry'] + params['h']), params['r'], fill=bc, outline=None)
+            elif sh == "frame":
+                params['margin'] = 20
+                params['frame_width'] = 5
+                draw.rectangle((params['margin'], params['margin'], params['width'] - params['margin'], params['height'] - params['margin']), fill=bc, outline=fc, width=frame_width)
 
             if params['logo_path']:
                 with draw_settings:
@@ -120,12 +120,14 @@ def generate_images(temp_path, draw_settings, **params):
                 image = process_qr(image, params['qr_text'])
 
             out_name = f"{len(params['filelist']):05d}{params['ext']}"
-            temp_image_path = os.path.join(subfolder_path, out_name)
+            temp_image_path = os.path.join(temp_path, out_name)
+            # temp_image_path = os.path.join(subfolder_path, out_name)
             image.save(temp_image_path)
             params['filelist'].append(temp_image_path)
 
     if params['gen_gif']:
-        images_path = subfolder_path
+        images_path = temp_path
+        # images_path = subfolder_path
         gif_path =  'output.gif'
         image = generate_gif(images_path, params['delay'], 0, gif_path)
         st.image(gif_path)
@@ -135,12 +137,16 @@ def generate_images(temp_path, draw_settings, **params):
     else:
         params['preview_image'].append(params['filelist'][0])
 
+
     if params['gen_gridview']:
-        for idx, img in enumerate(params['preview_image']):
-            params['cols'][idx % params['grid_col']].image(img, caption=os.path.basename(params['preview_image'][idx]), use_column_width=True)
+        for idx in range(len(params['preview_image'])):
+            img = params['preview_image'][idx]
+            params['cols'][idx % params['grid_col']].image(img, caption=os.path.basename(img), use_column_width=True)
     else:
-        for idx, img in enumerate(params['preview_image']):
-            st.image(img, caption=os.path.basename(params['preview_image'][idx]), use_column_width=True)
+        for idx in range(len(params['preview_image'])):
+            img = params['preview_image'][idx]
+            st.image(img, caption=os.path.basename(img), use_column_width=True)
+
 
     return params['filelist']
 
@@ -165,7 +171,7 @@ def main():
         gen_gridview = st.checkbox("Grid View")
         grid_col = 1
         if gen_gridview:
-            grid_col = st.slider("Grid Col",1,8,2)
+            grid_col = st.slider("Grid Col",1,8,4)
     cols = st.columns(grid_col)
 
     draw_settings = st.sidebar.expander("Draw Settings")
@@ -267,14 +273,15 @@ def main():
     filelist = generate_images(temp_path, draw_settings, **params)
 
     with output_settings:
-        setting_fname = st.text_input("Output",'settings.json')
+        zip_fname = st.text_input("Images filename","images.zip")
+        zip_path = create_zip(zip_fname, filelist)
+        st.download_button("Download images(.zip)", data=zip_path, file_name=zip_fname)
+
+        setting_fname = st.text_input("Settings filename",'settings.json')
         # export_settings(params, setting_fname)
         st.download_button("Export settings (.json)", data=open
         (setting_fname, 'rb').read(), file_name=setting_fname)
 
-        zip_fname = "outputs.zip"
-        zip_path = create_zip(zip_fname, filelist)
-        st.download_button("Download (.zip)", data=zip_path, file_name=zip_fname)
 
 
     # clear_temp_folder(temp_path)

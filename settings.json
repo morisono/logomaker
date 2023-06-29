@@ -4,32 +4,6 @@
   "gen_preview": false,
   "gen_gridview": false,
   "logo_path": [],
-  "filelist": [
-    "/tmp/('Designed by', 'm.s.')/00000.png",
-    "/tmp/('Designed by', 'm.s.')/00001.png",
-    "/tmp/('Designed by', 'm.s.')/00002.png",
-    "/tmp/('Designed by', 'm.s.')/00003.png",
-    "/tmp/('Designed by', 'm.s.')/00004.png",
-    "/tmp/('Designed by', 'm.s.')/00005.png",
-    "/tmp/('Designed by', 'm.s.')/00006.png",
-    "/tmp/('Designed by', 'm.s.')/00007.png",
-    "/tmp/('Designed by', 'm.s.')/00008.png",
-    "/tmp/('Designed by', 'm.s.')/00009.png",
-    "/tmp/('Designed by', 'm.s.')/00010.png",
-    "/tmp/('Designed by', 'm.s.')/00011.png",
-    "/tmp/('Designed by', 'm.s.')/00012.png",
-    "/tmp/('Designed by', 'm.s.')/00013.png",
-    "/tmp/('Designed by', 'm.s.')/00014.png",
-    "/tmp/('Designed by', 'm.s.')/00015.png",
-    "/tmp/('Designed by', 'm.s.')/00016.png",
-    "/tmp/('Designed by', 'm.s.')/00017.png",
-    "/tmp/('Designed by', 'm.s.')/00018.png",
-    "/tmp/('Designed by', 'm.s.')/00019.png",
-    "/tmp/('Designed by', 'm.s.')/00020.png",
-    "/tmp/('Designed by', 'm.s.')/00021.png",
-    "/tmp/('Designed by', 'm.s.')/00022.png",
-    "/tmp/('Designed by', 'm.s.')/00023.png"
-  ],
   "colorlist": [
     [
       "red",
@@ -238,8 +212,7 @@
     "fonts/LibreBarcode39 Regular.ttf"
   ],
   "preview_image": [
-    "/tmp/('Designed by', 'm.s.')/00000.png",
-    "/tmp/('Designed by', 'm.s.')/00000.png",
-    "/tmp/('Designed by', 'm.s.')/00000.png"
+  ],
+  "filelist": [
   ]
 }
