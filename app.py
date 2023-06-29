@@ -5,7 +5,7 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import tempfile
 import matplotlib.font_manager as fm
-
+import uuid
 from modules.common import load_ui_config, create_zip, export_settings, generate_qr, clear_temp_folder
 from modules.ui import hide_ft_style
 
@@ -79,53 +79,53 @@ def generate_images(colorlist, wordlist, gf, ext, w, h, gpx, gpy, gfs, glx, gly,
             fontlist.append(os.path.join(font_path, filename))
 
     for words in wordlist:
-
         for word in words:
+            unique_key = str(uuid.uuid4())
             with draw_settings:
-                gpx.append(st.slider(f"Pad x : \"{word}\"", -500, 500, 0, 10, key=f'{len(filelist):05d}_{word}_gpx'))
-                gpy.append(st.slider(f"Pad y : \"{word}\"", -500, 500, 0, 10, key=f'{len(filelist):05d}_{word}_gpy'))
-                gfs.append(st.slider(f"Font size : \"{word}\"", 0, 800, 100, 8, key=f'{len(filelist):05d}_{word}_gfs'))
-                gf.append(st.selectbox(f"Font : \"{word}\"", fontlist, key=f'{len(filelist):05d}_{word}_gf'))
-                glz.append(st.slider("Logo Zoom", 0.05, 4.0, 0.20, 0.01, key=f'{len(filelist):05d}_{word}_glz'))
-                stc.append(st.text_input(f"Stroke fill: \"{word}\"", "gray", key=f'{len(filelist):05d}_{word}_stc'))
-                stw.append(st.slider(f"Stroke width: \"{word}\"", 0, 20, 0, key=f'{len(filelist):05d}_{word}_stw'))
+                gpx.append(st.slider(f"Pad x : \"{word}\"", -500, 500, 0, 10, key=f'{unique_key}_gpx'))
+                gpy.append(st.slider(f"Pad y : \"{word}\"", -500, 500, 0, 10, key=f'{unique_key}_gpy'))
+                gfs.append(st.slider(f"Font size : \"{word}\"", 0, 800, 100, 8, key=f'{unique_key}_gfs'))
+                gf.append(st.selectbox(f"Font : \"{word}\"", fontlist, key=f'{unique_key}_gf'))
+                glz.append(st.slider("Logo Zoom", 0.05, 4.0, 0.20, 0.01, key=f'{unique_key}_glz'))
+                stc.append(st.text_input(f"Stroke fill: \"{word}\"", "gray", key=f'{unique_key}_stc'))
+                stw.append(st.slider(f"Stroke width: \"{word}\"", 0, 20, 0, key=f'{unique_key}_stw'))
 
-    for colors in colorlist:
-        bc, fc = colors
-        image = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(image)
-        for sh in shape:
-            if sh == "fill":
-                draw.rectangle((0, 0, w, h), fill=bc)
-            elif sh == "circle":
-                r = 50
-                cx, cy = w * 0.5, h * 0.5
-                draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=bc, outline=None)
-            elif sh == "roundrect":
-                rx, ry = 0, 0
-                r = 20
-                draw.rounded_rectangle((rx, ry, rx + w, ry + h), r, fill=bc, outline=None)
-            elif sh == "frame":
-                margin = 20
-                frame_width = 5
-                draw.rectangle((margin, margin, w - margin, h - margin), fill=bc, outline=fc, width=frame_width)
+        for colors in colorlist:
+            bc, fc = colors
+            image = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(image)
+            for sh in shape:
+                if sh == "fill":
+                    draw.rectangle((0, 0, w, h), fill=bc)
+                elif sh == "circle":
+                    r = 50
+                    cx, cy = w * 0.5, h * 0.5
+                    draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=bc, outline=None)
+                elif sh == "roundrect":
+                    rx, ry = 0, 0
+                    r = 20
+                    draw.rounded_rectangle((rx, ry, rx + w, ry + h), r, fill=bc, outline=None)
+                elif sh == "frame":
+                    margin = 20
+                    frame_width = 5
+                    draw.rectangle((margin, margin, w - margin, h - margin), fill=bc, outline=fc, width=frame_width)
 
 
 
-        if logo_path:
-            with draw_settings:
-                glx.append(st.slider(f"Logo x: \"{word}\"", -w, w, 0, 10, key=f'{len(filelist):05d}_{word}_glx'))
-                gly.append(st.slider(f"Logo y: \"{word}\"", -h, h, 0, 10, key=f'{len(filelist):05d}_{word}_gly'))
-            image = process_logo(image, glx, gly, glz)
-        image = process_image(image, words, gpx, gpy, gf, gfs, stc, stw)
+            if logo_path:
+                with draw_settings:
+                    glx.append(st.slider(f"Logo x: \"{word}\"", -w, w, 0, 10, key=f'{unique_key}_glx'))
+                    gly.append(st.slider(f"Logo y: \"{word}\"", -h, h, 0, 10, key=f'{unique_key}_gly'))
+                image = process_logo(image, glx, gly, glz)
+            image = process_image(image, words, gpx, gpy, gf, gfs, stc, stw)
 
-        if gen_qr:
-            image = process_qr(image, qr_text)
+            if gen_qr:
+                image = process_qr(image, qr_text)
 
-        out_name = f"{len(filelist):05d}{ext}"
-        temp_image_path = os.path.join(subfolder_path, out_name)
-        image.save(temp_image_path)
-        filelist.append(temp_image_path)
+            out_name = f"{len(filelist):05d}{ext}"
+            temp_image_path = os.path.join(subfolder_path, out_name)
+            image.save(temp_image_path)
+            filelist.append(temp_image_path)
 
     if gen_gif:
         images_path = subfolder_path
