@@ -4,7 +4,6 @@
   "gen_preview": false,
   "gen_gridview": false,
   "image_dir": [],
-  "colorlist": [],
   "size_preset": {
     "Banner (1500, 500)": [1500, 500],
     "2:1 (1024, 512)": [1024, 512],
