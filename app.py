@@ -19,29 +19,27 @@ def generate_images(state, draw_settings):
             resized_logo_h = int(logo_h * lz)
             resized_logo = logo_image.resize((resized_logo_w, resized_logo_h))
             image.paste(resized_logo, (lx, ly), mask=resized_logo)
-            return image
-
-    def process_image(image):
-        for word, px, py, f, fs, sc, sw in zip(words, state['font_x'], state['font_y'], state['font'], state['font_z'], state['stroke_fill'], state['stroke_width']):
-
-            font = ImageFont.truetype(f, fs)
-            text_bbox = draw.textbbox((0, 0), word, font=font)
-            text_width = text_bbox[2] - text_bbox[0]
-            text_height = text_bbox[3] - text_bbox[1]
-            text_x = (state['canvas_w'] - text_width) * 0.5 + px
-            text_y = (state['canvas_h'] - text_height) * 0.5 + py
-
-            draw.text((text_x, text_y),
-                        text=word, stroke_fill=sc, stroke_width=sw, fill=fc, font=font, anchor='lm')
         return image
 
-    def process_qr(image, qr_text):
-        for qr in qr_text:
-            qr_size = state['canvas_h'] * 0.01 if state['canvas_h'] < state['canvas_w'] else state['canvas_w'] * 0.01
-            qr_border =  qr_size * 0.2
-            qr_position = (int(state['canvas_w']-30*qr_size),  int(state['canvas_h']-30*qr_size))
-            qr_image = generate_qr(qr, qr_size, qr_border)
-            image.paste(qr_image, qr_position)
+    def process_image(image):
+        font = ImageFont.truetype(state['font'], state['font_z'])
+        text_bbox = draw.textbbox((0, 0), word, font=font)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+        state["font_x"] = int((state['canvas_w'] - text_width) * 0.5 + state["font_x"])
+        state["font_y"] = int((state['canvas_h'] - text_height) * 0.5 + state["font_y"])
+
+        draw.text((state["font_x"], state["font_y"]),
+                    text=word, stroke_fill=state['stroke_fill'], stroke_width=state['stroke_width'], fill=fc, font=font, anchor='lm')
+        return image
+
+    def process_qr(image):
+        for qr in state['qr_text']:
+            state['qr_size'] = state['canvas_h'] * 0.01 if state['canvas_h'] < state['canvas_w'] else state['canvas_w'] * 0.01
+            state['qr_border'] =  state['qr_size'] * 0.2
+            state['qr_position'] = (int(state['canvas_w']-30*state['qr_size']),  int(state['canvas_h']-30*state['qr_size']))
+            qr_image = generate_qr(qr, state['qr_size'], state['qr_border'])
+            image.paste(qr_image, state['qr_position'])
         return image
 
     def generate_gif(image_path, delay, loop, output_path):
@@ -56,6 +54,7 @@ def generate_images(state, draw_settings):
 
         return image
 
+    state['filelist'] = []
     # os.makedirs(temp_path, exist_ok=True)
     # for words in state['wordlist']:
         # subfolder_path = os.path.join(temp_path, f"{words}")
@@ -71,13 +70,13 @@ def generate_images(state, draw_settings):
         for j, word in enumerate(words):
             unique_key = str(uuid.uuid4())
             with draw_settings:
-                state['font_x'].append(st.slider(f"Pad x : \"{word}\"", -500, 500, 0, 10, key=f'{unique_key}_font_x'))
-                state['font_y'].append(st.slider(f"Pad y : \"{word}\"", -500, 500, 0, 10, key=f'{unique_key}_font_y'))
-                state['font_z'].append(st.slider(f"Font size : \"{word}\"", 0, 800, 100, 8, key=f'{unique_key}_font_z'))
-                state['font'].append(st.selectbox(f"Font : \"{word}\"", state['fontlist'], key=f'{unique_key}_font'))
-                state['logo_z'].append(st.slider("Logo Zoom", 0.05, 4.0, 0.20, 0.01, key=f'{unique_key}_logo_z'))
-                state['stroke_fill'].append(st.text_input(f"Stroke fill: \"{word}\"", "gray", key=f'{unique_key}_stroke_fill'))
-                state['stroke_width'].append(st.slider(f"Stroke width: \"{word}\"", 0, 20, 0, key=f'{unique_key}_stroke_width'))
+                state['font_x'] = st.slider(f"Pad x : \"{word}\"", -500, 500, 0, 10, key=f'{unique_key}_font_x')
+                state['font_y'] = st.slider(f"Pad y : \"{word}\"", -500, 500, 0, 10, key=f'{unique_key}_font_y')
+                state['font_z'] = st.slider(f"Font size : \"{word}\"", 0, 800, 100, 8, key=f'{unique_key}_font_z')
+                state['font'] = st.selectbox(f"Font : \"{word}\"", state['fontlist'], key=f'{unique_key}_font')
+                state['logo_z'] = st.slider("Logo Zoom", 0.05, 4.0, 0.20, 0.01, key=f'{unique_key}_logo_z')
+                state['stroke_fill'] = st.text_input(f"Stroke fill: \"{word}\"", "gray", key=f'{unique_key}_stroke_fill')
+                state['stroke_width'] = st.slider(f"Stroke width: \"{word}\"", 0, 20, 0, key=f'{unique_key}_stroke_width')
 # TODO
     for colors in state['colorlist']:
         bc, fc = colors
@@ -92,8 +91,9 @@ def generate_images(state, draw_settings):
                 draw.ellipse((state['circle_x'] - state['radius'], state['circle_y'] - state['radius'], state['circle_x'] + state['radius'], state['circle_y'] + state['radius']), fill=bc, outline=None)
             elif sh == "roundrect":
                 state['rect_x'], state['rect_y'] = 0, 0
-                state['radius'] = 20
+                state['radius'] = 40
                 draw.rounded_rectangle((state['rect_x'], state['rect_y'], state['rect_x'] + state['canvas_w'], state['rect_y'] + state['canvas_h']), state['radius'], fill=bc, outline=None)
+
             elif sh == "frame":
                 draw.rectangle((state['margin'], state['margin'], state['canvas_w'] - state['margin'], state['canvas_h'] - state['margin']), fill=state['frame_fill'], outline=bc, width=state['frame_width'])
 
@@ -105,13 +105,14 @@ def generate_images(state, draw_settings):
             image = process_image(image)
 
             if state['gen_qr']:
-                image = process_qr(image, state['qr_text'])
+                image = process_qr(image)
 
             out_name = f"{len(state['filelist']):05d}{state['ext']}"
             temp_image_path = os.path.join(state['temp_path'], out_name)
             # temp_image_path = os.path.join(subfolder_path, out_name)
-            image.save(temp_image_path)
-            state['filelist'].append(temp_image_path)
+        image.save(temp_image_path)
+        state['filelist'].append(temp_image_path)
+    st.write(state['filelist'])
 
     if state['gen_gif']:
         images_path = state['temp_path']
@@ -120,44 +121,57 @@ def generate_images(state, draw_settings):
         image = generate_gif(images_path, state['delay'], 0, gif_path)
         st.image(gif_path)
 
-    if state['gen_preview']:
-        state['preview_image'] = state['filelist']
+    if state['filelist'] is None:
+        pass
     else:
-        if state['filelist']:
-            state['preview_image'].append(state['filelist'][0])
-
+        if state['gen_preview']:
+            state['preview_image'] = state['filelist']
+        else:
+            state['preview_image'] = [state['filelist'][0]]
 
     if state['gen_gridview']:
-        for idx in range(len(state['preview_image'])):
-            img = state['preview_image'][idx]
-            state['cols'][idx % state['grid_col']].image(img, caption=os.path.basename(img), use_column_width=True)
+        col_count = state['grid_col']
+        image_count = len(state['preview_image'])
+        for idx, img in enumerate(state['preview_image']):
+            col_idx = idx % col_count
+            if col_idx == 0:
+                col = st.columns(col_count)
+            col[col_idx].image(img, caption=os.path.basename(img), use_column_width=True)
     else:
-        for idx in range(len(state['preview_image'])):
-            img = state['preview_image'][idx]
+        for img in state['preview_image']:
             st.image(img, caption=os.path.basename(img), use_column_width=True)
 
+    return state['preview_image']
 
-    return state['filelist']
+
 
 
 def main():
-    load_ui_config()
-    load_settings()
     state = st.session_state
+    load_ui_config()
     st.set_page_config(
         page_title=state['page_title'],
         page_icon=state['page_icon'],
         layout=state['layout'],
         initial_sidebar_state='auto')
     hide_ft_style()
-
+    if st.sidebar.button("Start"):
+        load_settings()
     title = st.title("Logo Maker Web UI")
     settings = st.sidebar.title("Settings")
     input_settings = st.sidebar.expander("Input Settings")
     with input_settings:
         colorlist = state['colorlist']
         colors = st.text_area("Enter color list (split like c1;c2;.., newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in colorlist]))
+
+        cols1, cols2 = st.columns([1, 1])
+        with cols1:
+            bc_pick = st.color_picker('',key=f'bc_pick')
+        with cols2:
+            fc_pick = st.color_picker('', '#fff',key=f'fc_pick')
+
         colorlist = [tuple(line.split(';')) for line in colors.splitlines() if line.strip()]
+        # colorlist.append((bc_pick, fc_pick))
 
         wordlist = state['wordlist']
         words = st.text_area("Enter word list (split like w1;w2;..,newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in wordlist]))
@@ -184,15 +198,15 @@ def main():
         if state['shape']:
             if "circle" in state['shape']:
                 state['radius'] = st.slider("Circle Radius", 1, 100, 50)
-                state['circle_x'] = st.slider("Circle Center X", 0, state['w'], int(state['w'] *0.5))
-                state['circle_y'] = st.slider("Circle Center Y", 0, state['h'], int(state['h'] *0.5))
+                state['circle_x'] = st.slider("Circle Center X", 0, state['canvas_w'], int(state['canvas_w'] *0.5))
+                state['circle_y'] = st.slider("Circle Center Y", 0, state['canvas_h'], int(state['canvas_h'] *0.5))
 
             elif "roundrect" in state['shape']:
-                state['rect_x'] = st.slider("Round Rectangle X", 0, state['w'], int(state['w'] *0.5))
-                state['rect_y'] = st.slider("Round Rectangle Y", 0, state['h'], int(state['h'] *0.5))
+                state['rect_x'] = st.slider("Round Rectangle X", 0, state['canvas_w'], int(state['canvas_w'] *0.5))
+                state['rect_y'] = st.slider("Round Rectangle Y", 0, state['canvas_h'], int(state['canvas_h'] *0.5))
 
             elif "frame" in state['shape']:
-                state['margin'] = st.slider("Frame margin", 0, min(state['w'], state['h'])//2, 50)
+                state['margin'] = st.slider("Frame margin", 0, min(state['canvas_w'], state['canvas_h'])//2, 50)
 
     insert_settings = st.sidebar.expander("Insert Settings")
     with insert_settings:
@@ -203,17 +217,17 @@ def main():
         # logo = st.sidebar.selectbox("Logo", logolist)
         state['logo'] = st.file_uploader("Logo Image", accept_multiple_files=True)
         state['logo_path'] = state['logo'] if state['logo'] else [].append([])
-        state['temp_path'] = tempfile.gettempdir()
 
         state['gen_qr'] = st.checkbox("QR")
         if state['gen_qr']:
             state['qr_text'] = st.text_area("QR text", "example.com")
-        state['qr_text'] = [line for line in state['qr_text'].splitlines() if line.strip()]
+            state['qr_text'] = [line for line in state['qr_text'].splitlines() if line.strip()]
 
         state['gen_gif'] = st.checkbox("GIF Animation")
         if state['gen_gif']:
             state['delay'] = st.slider("Delay", 0, 5000, 0, 100)
 
+    state['temp_path'] = tempfile.gettempdir()
     state['timestamp'] = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     state['size'] = f"{state['canvas_w']}x{state['canvas_h']}"
 
@@ -236,6 +250,7 @@ def main():
 
 
     # clear_temp_folder(temp_path)
+
 
 if __name__ == "__main__":
     main()
