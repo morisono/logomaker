@@ -8,11 +8,13 @@
   "size": "1500x500",
   "canvas_w": 1500,
   "canvas_h": 500,
+  "colors": [],
+  "words": [],
   "shape": [],
   "fonts": [],
-  "logo_x": [],
-  "logo_y": [],
-  "logo_z": [],
+  "logo_x": 0,
+  "logo_y": 0,
+  "logo_z": 10,
   "image_x": [],
   "image_y": [],
   "image_z": [0.2],
@@ -84,6 +86,9 @@
     "fonts/Delagothicone Regular.ttf",
     "fonts/LibreBarcode39 Regular.ttf"
   ],
+  "zip_fname": "images.zip",
+  "settings_fname": "settings.json",
+  "gif_fname": "output.gif",
   "preview_image": [],
   "filelist": []
 }

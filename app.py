@@ -40,15 +40,22 @@ def process_qr(image, qr_text, qr_size, qr_position, qr_border, **kwargs):
     image.paste(qr_image, qr_position)
     return image
 
-def generate_gif(image_path):
-    images = glob.glob(os.path.join(image_path, "*"))
+def generate_gif(image_dir, ext, gif_fname, delay):
+    image_paths = []
     frames = []
+    for image_path in os.listdir(image_dir):
+        if image_path.endswith(ext):
+            image_paths.append(os.path.join(image_dir, image_path))
 
-    for image_file in images:
-        img = Image.open(image_file)
-        frames.append(img)
-    return frames
+    for image_path in image_paths:
+        image = Image.open(image_path)
+        frames.append(image)
 
+    out_path = os.path.join(image_dir, gif_fname)
+
+    frames[0].save(out_path, format="GIF", append_images=frames[1:], save_all=True, duration=delay, loop=0)
+
+    return out_path
 
 
 def generate_images(state, widget_input, widget_view, widget_draw, widget_insert, widget_output):
@@ -100,9 +107,9 @@ def generate_images(state, widget_input, widget_view, widget_draw, widget_insert
             font = st.selectbox(f"Font : \"{words}\"", state['fontlist'], key=f'font_{index}')
             stroke_fill = st.text_input(f"Stroke fill: \"{words}\"", "gray", key=f'stroke_fill_{index}')
             stroke_width = st.slider(f"Stroke width: \"{words}\"", 0, 20, 0, key=f'stroke_width_{index}')
-            logo_x = st.slider(f"Logo x : \"{words}\"", -500, 500, 0, 10, key=f'logo_x_{index}')
-            logo_y = st.slider(f"Logo y : \"{words}\"", -500, 500, 0, 10, key=f'logo_y_{index}')
-            logo_z = st.slider(f"Logo size : \"{words}\"", 0, 800, 100, 8, key=f'logo_z_{index}')
+            logo_x = st.slider(f"Logo x : \"{words}\"", -500, 500, state['logo_x'], 10, key=f'logo_x_{index}')
+            logo_y = st.slider(f"Logo y : \"{words}\"", -500, 500, state['logo_y'], 10, key=f'logo_y_{index}')
+            logo_z = st.slider(f"Logo size : \"{words}\"", 0, 800, state['logo_z'], 8, key=f'logo_z_{index}')
 
         image = process_logo(
             image,
@@ -138,10 +145,8 @@ def generate_images(state, widget_input, widget_view, widget_draw, widget_insert
         images_path = state['temp_path']
         # images_path = subfolder_path
         with widget_insert:
-            gif_path = st.text_input("Filename", 'output.gif')
-        frames = generate_gif(images_path)
-        frames[0].save(gif_path, format="GIF", append_images=frames[1:], save_all=True, duration=state['delay'], loop=0)
-        state['filelist'].append(gif_path)
+            out_path = generate_gif(images_path, state['ext'], state['gif_fname'], state['delay'])
+            state['filelist'].append(out_path)
 
 
 
@@ -159,13 +164,15 @@ def main():
     settings = st.sidebar.title("Settings")
     widget_input = st.sidebar.expander("Input Settings")
     with widget_input:
-        state['colors'] = st.text_area("Enter color list (split like c1;c2;.., newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in state['colorlist']]))
-
         cols1, cols2 = st.columns([1, 1])
         with cols1:
-            bc_pick = st.color_picker('',key=f'bc_pick')
+            bc_pick = st.color_picker('Background color',key=f'bc_pick')
         with cols2:
-            fc_pick = st.color_picker('', '#fff',key=f'fc_pick')
+            fc_pick = st.color_picker('Foreground color', '#fff',key=f'fc_pick')
+        if st.button("Append"):
+            state['colorlist'].append((bc_pick,fc_pick))
+
+        state['colors'] = st.text_area("Enter color list (split like c1;c2;.., newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in state['colorlist']]))
 
 
         words = st.text_area("Enter word list (split like w1;w2;..,newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in state['wordlist']]))
@@ -212,12 +219,12 @@ def main():
         state['logo'] = st.file_uploader("Logo Image", accept_multiple_files=True)
         state['image_dir'] = state['logo'] if state['logo'] else [].append([])
 
-        state['gen_qr'] = st.checkbox("QR")
+        state['gen_qr'] = st.checkbox("QR", True)
         if state['gen_qr']:
             state['qr_text'] = st.text_area("QR text", "example.com")
             state['qr_text'] = [line for line in state['qr_text'].splitlines() if line.strip()]
 
-        state['gen_gif'] = st.checkbox("GIF Animation")
+        state['gen_gif'] = st.checkbox("GIF Animation", True)
         if state['gen_gif']:
             state['delay'] = st.slider("Delay", 0, 5000, 0, 100)
 
@@ -252,15 +259,10 @@ def main():
             st.image(img, caption=os.path.basename(img), use_column_width=True)
 
     with widget_output:
-        state['zip_fname'] = st.text_input("Images filename","images.zip")
-        state['zip_path'] = create_zip(state['zip_fname'], state['filelist'])
-        st.download_button("Download images(.zip)", data=state['zip_path'], file_name=state['zip_fname'])
+        st.download_button("Download images(.zip)", data=create_zip(os.path.join(state['temp_path'], state['zip_fname']), state['filelist']), file_name=state['zip_fname'])
 
-        state['setting_fname'] = st.text_input("Settings filename",'settings.json')
-        # export_settings(state, state['setting_fname'])
         st.download_button("Export settings (.json)", data=open
-        (state['setting_fname'], 'rb').read(), file_name=state['setting_fname'])
-
+        (state['settings_fname'], 'rb').read(), file_name=state['settings_fname'])
 
 
     # clear_temp_folder(temp_path)
