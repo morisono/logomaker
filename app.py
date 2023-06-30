@@ -5,7 +5,6 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import tempfile
 import matplotlib.font_manager as fm
-import uuid
 from modules.common import load_settings, load_ui_config, create_zip, export_settings, generate_qr, clear_temp_folder
 from modules.ui import hide_ft_style
 import itertools
@@ -41,20 +40,18 @@ def process_qr(image, qr_text, qr_size, qr_position, qr_border, **kwargs):
     image.paste(qr_image, qr_position)
     return image
 
-def generate_gif(image_path, delay, loop, output_path):
+def generate_gif(image_path):
     images = glob.glob(os.path.join(image_path, "*"))
     frames = []
 
     for image_file in images:
         img = Image.open(image_file)
         frames.append(img)
-
-    frames[0].save(output_path, format="GIF", append_images=frames[1:], save_all=True, duration=delay, loop=loop)
-
-    return image
+    return frames
 
 
-def generate_images(state, widget_view, widget_draw):
+
+def generate_images(state, widget_input, widget_view, widget_draw, widget_insert, widget_output):
 
     state['filelist'] = []
     # temp_image_path = os.path.join(subfolder_path, temp_fname)    # os.makedirs(temp_path, exist_ok=True)
@@ -70,7 +67,7 @@ def generate_images(state, widget_view, widget_draw):
             state['fontlist'].append(os.path.join(state['font_path'], font_path))
 
     with widget_view:
-        limits_gen = st.slider("Limits of Generation", 0, 100, 1, 1)
+        limits_gen = st.slider("Limits of Generation", 0, 100, 4, 1)
 
     # Draw
     generated_count = 0
@@ -121,30 +118,31 @@ def generate_images(state, widget_view, widget_draw):
             canvas_h=state['canvas_h']
         )
 
+        if state['image_dir']:
+            with widget_draw:
+                state['image_x'].append(st.slider(f"Logo x: \"{word}\"", -state['canvas_w'], state['canvas_w'], 0, 10, key=f'image_x_{index}'))
+                state['image_y'].append(st.slider(f"Logo y: \"{word}\"", -state['canvas_h'], state['canvas_h'], 0, 10, key=f'image_y_{index}'))
+
+                image = process_image(image, state['image_dir'], state['image_x'], state['image_y'], state['image_z'])
+
+
+        if state['gen_qr']:
+            image = process_qr(image, qr_text, state['qr_size'], state['qr_position'], state['qr_border'], canvas_w=state['canvas_w'], canvas_h=state['canvas_h'])
 
         image.save(temp_image_path)
         state['filelist'].append(temp_image_path)
         generated_count += 1
         # st.write(state['filelist'])
 
-    if state['image_dir']:
-        with widget_draw:
-            state['image_x'].append(st.slider(f"Logo x: \"{word}\"", -state['canvas_w'], state['canvas_w'], 0, 10, key=f'image_x_{index}'))
-            state['image_y'].append(st.slider(f"Logo y: \"{word}\"", -state['canvas_h'], state['canvas_h'], 0, 10, key=f'image_y_{index}'))
-
-            image = process_image(image, state['image_dir'], state['image_x'], state['image_y'], state['image_z'])
-
-
-    if state['gen_qr']:
-        image = process_qr(image, qr_text, state['qr_size'], state['qr_position'], state['qr_border'], canvas_w=state['canvas_w'], canvas_h=state['canvas_h'])
-
-
     if state['gen_gif']:
         images_path = state['temp_path']
         # images_path = subfolder_path
-        gif_path =  'output.gif'
-        image = generate_gif(images_path, state['delay'], 0, gif_path)
-        st.image(gif_path)
+        with widget_insert:
+            gif_path = st.text_input("Filename", 'output.gif')
+        frames = generate_gif(images_path)
+        frames[0].save(gif_path, format="GIF", append_images=frames[1:], save_all=True, duration=state['delay'], loop=0)
+        state['filelist'].append(gif_path)
+
 
 
 def main():
@@ -231,7 +229,7 @@ def main():
     with widget_output:
         state['ext'] = st.selectbox("File Format", state['ext'])
 
-    generate_images(state, widget_view, widget_draw)
+    generate_images(state, widget_input, widget_view, widget_draw, widget_insert, widget_output)
 
     if state['filelist'] is None:
         pass

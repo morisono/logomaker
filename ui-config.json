@@ -12,14 +12,6 @@
     [
       "green",
       "black"
-    ],
-    [
-      "yellow",
-      "white"
-    ],
-    [
-      "cyan",
-      "magenta"
     ]
   ],
   "wordlist": [["Designed by", "M"],[
@@ -37,6 +29,10 @@
     ".webp"
   ],
   "size_preset": {
+    "Square (256, 256)": [
+      256,
+      256
+    ],
     "Banner (1500, 500)": [
       1500,
       500
