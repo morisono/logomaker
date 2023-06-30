@@ -22,12 +22,10 @@
       "magenta"
     ]
   ],
-  "wordlist": [
-    [
-      "Designed by",
-      "m.s."
-    ]
-  ],
+  "wordlist": [["Designed by", "M"],[
+        "For",
+        "Mass Production"
+    ]],
   "logolist": [],
   "ext": [
     ".png",
