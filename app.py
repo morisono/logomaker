@@ -247,8 +247,8 @@ def main():
 
     widget_view = st.sidebar.expander("View Settings")
     with widget_view:
-        state['gen_preview'] = st.checkbox("Preview All", True)
-        state['gen_gridview'] = st.checkbox("Grid View", True)
+        state['gen_preview'] = st.checkbox("Preview All")
+        state['gen_gridview'] = st.checkbox("Grid View")
         if state['gen_gridview']:
             state['grid_col'] = st.slider("Grid Col",1,8,2)
     state['cols'] = st.columns(state['grid_col'])
