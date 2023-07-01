@@ -311,7 +311,7 @@ def main():
             if col_idx == 0:
                 col = st.columns(col_count)
             col[col_idx].image(img, caption=os.path.basename(img), use_column_width=True)
-r    else:
+    else:
         for img in state['preview_image']:
             st.image(img, caption=os.path.basename(img), use_column_width=True)
 
