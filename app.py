@@ -124,7 +124,7 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_v
             state['font'] = st.selectbox(f"Font", state['fontlist'], key=f'font_{index}')
             state['text_x'] = st.slider(f"Text x", -500, 500, 0, 10, key=f'text_x_{index}')
             state['text_y'] = st.slider(f"Text y", -500, 500, 0, 10, key=f'text_y_{index}')
-            state['text_z'] = st.slider(f"Text size", 0, 100, 10, 8, key=f'text_z_{index}')
+            state['text_z'] = st.slider(f"Text size", 0, 100, 100, 8, key=f'text_z_{index}')
             state['stroke_width'] = st.slider(f"Stroke width", 0, 20, 0, key=f'stroke_width_{index}')
             state['stroke_fill'] = st.text_input(f"Stroke fill", "gray", key=f'stroke_fill_{index}')
 
