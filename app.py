@@ -3,6 +3,7 @@ import datetime
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import tempfile
+from pathlib import Path
 import matplotlib.font_manager as fm
 from modules.common import load_settings, load_ui_config, create_zip, export_settings, generate_qr, clear_temp_folder
 from modules.ui import hide_ft_style
@@ -181,8 +182,8 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_v
         images_path = temp_dir
         # images_path = subfolder_path
         with widget_output:
-            out_path = generate_gif(images_path, selected_ext, state['gif_fname'], delay)
-            state['filelist'].append(out_path)
+            temp_gif_path = generate_gif(images_path, selected_ext, state['gif_fname'], delay)
+            state['filelist'].append(temp_gif_path)
 
 
 
@@ -197,7 +198,13 @@ def main():
     hide_ft_style()
     load_settings()
 
+
+    # project_root = Path(__file__).resolve().parent
+    # temp_dir = tempfile.mkdtemp(dir=f'{project_root}/outputs')
     temp_dir = tempfile.gettempdir()
+
+
+
     state['timestamp'] = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
     title = st.title("Logo Maker Web UI")
@@ -304,12 +311,24 @@ def main():
             if col_idx == 0:
                 col = st.columns(col_count)
             col[col_idx].image(img, caption=os.path.basename(img), use_column_width=True)
-    else:
+r    else:
         for img in state['preview_image']:
             st.image(img, caption=os.path.basename(img), use_column_width=True)
 
     with widget_output:
-        st.download_button("Download images(.zip)", data=create_zip(os.path.join(temp_dir, state['zip_fname']), state['filelist']), file_name=state['zip_fname'])
+        if st.button("Create Zip"):
+            zip_fname = state['zip_fname']
+            zip_path = os.path.join(temp_dir, zip_fname)
+            filelist = state['filelist']
+            create_zip(zip_path, filelist)
+            with open(zip_path, "rb") as file:
+                st.download_button(
+                    label="Download images (.zip)",
+                    data=file,
+                    file_name=zip_fname,
+                    mime="application/zip"
+                )
+
 
         st.download_button("Export settings (.json)", data=open
         (state['settings_fname'], 'rb').read(), file_name=state['settings_fname'])
