@@ -58,7 +58,7 @@ def generate_gif(image_dir, ext, gif_fname, delay):
     return out_path
 
 
-def generate_images(state, widget_input, widget_view, widget_draw, widget_insert, widget_output):
+def generate_images(state, temp_dir, selected_ext, widget_input, widget_view, widget_draw, widget_insert, widget_output):
 
     state['filelist'] = []
     # temp_image_path = os.path.join(subfolder_path, temp_fname)    # os.makedirs(temp_path, exist_ok=True)
@@ -82,8 +82,8 @@ def generate_images(state, widget_input, widget_view, widget_draw, widget_insert
         if generated_count >= limits_gen:
             break
 
-        temp_fname = f"{index:05d}{state['ext']}"
-        temp_image_path = os.path.join(state['temp_path'], temp_fname)
+        temp_fname = f"{index:05d}{selected_ext}"
+        temp_image_path = os.path.join(temp_dir, temp_fname)
 
         state['bc'], state['fc'] = colors
         image = Image.new("RGBA", (state['canvas_w'], state['canvas_h']), (0, 0, 0, 0))
@@ -136,16 +136,17 @@ def generate_images(state, widget_input, widget_view, widget_draw, widget_insert
         if state['gen_qr']:
             image = process_qr(image, qr_text, state['qr_size'], state['qr_position'], state['qr_border'], canvas_w=state['canvas_w'], canvas_h=state['canvas_h'])
 
+        st.write(temp_image_path)
         image.save(temp_image_path)
         state['filelist'].append(temp_image_path)
         generated_count += 1
         # st.write(state['filelist'])
 
     if state['gen_gif']:
-        images_path = state['temp_path']
+        images_path = temp_dir
         # images_path = subfolder_path
         with widget_insert:
-            out_path = generate_gif(images_path, state['ext'], state['gif_fname'], state['delay'])
+            out_path = generate_gif(images_path, selected_ext, state['gif_fname'], state['delay'])
             state['filelist'].append(out_path)
 
 
@@ -169,13 +170,14 @@ def main():
             bc_pick = st.color_picker('Background color',key=f'bc_pick')
         with cols2:
             fc_pick = st.color_picker('Foreground color', '#fff',key=f'fc_pick')
+
         if st.button("Append"):
-            state['colorlist'].append((bc_pick,fc_pick))
+            state['colorlist'].append(f'["{bc_pick}",{fc_pick}]')
 
-        state['colors'] = st.text_area("Enter color list (split like c1;c2;.., newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in state['colorlist']]))
+        st.text_area("Colors", value="\n".join([f"{x}" for x in state['colorlist']]))
 
 
-        words = st.text_area("Enter word list (split like w1;w2;..,newline for next)", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in state['wordlist']]))
+        words = st.text_area("Words", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in state['wordlist']]))
         state['wordlist'] = [tuple(line.split(';')) for line in words.splitlines() if line.strip()]
 
     widget_view = st.sidebar.expander("View Settings")
@@ -228,15 +230,15 @@ def main():
         if state['gen_gif']:
             state['delay'] = st.slider("Delay", 0, 5000, 0, 100)
 
-    state['temp_path'] = tempfile.gettempdir()
+    temp_dir = tempfile.gettempdir()
     state['timestamp'] = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     state['size'] = f"{state['canvas_w']}x{state['canvas_h']}"
 
     widget_output = st.sidebar.expander("Output Settings")
     with widget_output:
-        state['ext'] = st.selectbox("File Format", state['ext'])
+        selected_ext = st.selectbox("File Format", state['exts'])
 
-    generate_images(state, widget_input, widget_view, widget_draw, widget_insert, widget_output)
+    generate_images(state, temp_dir, selected_ext, widget_input, widget_view, widget_draw, widget_insert, widget_output)
 
     if state['filelist'] is None:
         pass
@@ -259,7 +261,7 @@ def main():
             st.image(img, caption=os.path.basename(img), use_column_width=True)
 
     with widget_output:
-        st.download_button("Download images(.zip)", data=create_zip(os.path.join(state['temp_path'], state['zip_fname']), state['filelist']), file_name=state['zip_fname'])
+        st.download_button("Download images(.zip)", data=create_zip(os.path.join(temp_dir, state['zip_fname']), state['filelist']), file_name=state['zip_fname'])
 
         st.download_button("Export settings (.json)", data=open
         (state['settings_fname'], 'rb').read(), file_name=state['settings_fname'])
