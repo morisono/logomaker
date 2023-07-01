@@ -18,16 +18,16 @@ def process_image(image, image_dir, image_x, image_y, image_z):
         image.paste(resized_logo, (image_x, image_y), mask=resized_logo)
     return image
 
-def process_logo(image, words, fonts, fc, logo_x, logo_y, logo_z, stroke_fill, stroke_width, **kwargs):
+def process_logo(image, words, fonts, fc, text_x, text_y, text_z, stroke_fill, stroke_width, **kwargs):
     for word in words:
-        font = ImageFont.truetype(fonts, logo_z)
+        font = ImageFont.truetype(fonts, text_z)
         text_bbox = ImageDraw.Draw(image).textbbox((0, 0), word, font=font)
         text_width = text_bbox[2] - text_bbox[0]
         text_height = text_bbox[3] - text_bbox[1]
-        logo_x = int((kwargs['canvas_w'] - text_width) * 0.5 + logo_x)
-        logo_y = int((kwargs['canvas_h'] - text_height) * 0.5 + logo_y)
+        text_x = int((kwargs['canvas_w'] - text_width) * 0.5 + text_x)
+        text_y = int((kwargs['canvas_h'] - text_height) * 0.5 + text_y)
 
-        ImageDraw.Draw(image).text((logo_x, logo_y),
+        ImageDraw.Draw(image).text((text_x, text_y),
                     text=word, stroke_fill=stroke_fill, stroke_width=stroke_width, fill=fc, font=font, anchor='lm')
     return image
 
@@ -57,7 +57,7 @@ def generate_gif(image_dir, ext, gif_fname, delay):
     return out_path
 
 
-def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_text, widget_shape,  widget_logo, widget_qr, widget_gif, widget_output):
+def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_text, widget_shape,  widget_lmage, widget_qr, widget_gif, widget_output):
 
     state['filelist'] = []
     # temp_image_path = os.path.join(subfolder_path, temp_fname)    # os.makedirs(temp_dir, exist_ok=True)
@@ -122,9 +122,9 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_v
         with widget_text:
             st.title(f'{index:05d}')
             state['font'] = st.selectbox(f"Font", state['fontlist'], key=f'font_{index}')
-            state['logo_x'] = st.slider(f"Logo x", -500, 500, 0, 10, key=f'logo_x_{index}')
-            state['logo_y'] = st.slider(f"Logo y", -500, 500, 0, 10, key=f'logo_y_{index}')
-            state['logo_z'] = st.slider(f"Logo size", 0, 100, 10, 8, key=f'logo_z_{index}')
+            state['text_x'] = st.slider(f"Logo x", -500, 500, 0, 10, key=f'text_x_{index}')
+            state['text_y'] = st.slider(f"Logo y", -500, 500, 0, 10, key=f'text_y_{index}')
+            state['text_z'] = st.slider(f"Logo size", 0, 100, 10, 8, key=f'text_z_{index}')
             state['stroke_width'] = st.slider(f"Stroke width", 0, 20, 0, key=f'stroke_width_{index}')
             state['stroke_fill'] = st.text_input(f"Stroke fill", "gray", key=f'stroke_fill_{index}')
 
@@ -133,16 +133,16 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_v
             wrds,
             state['font'],
             state['fc'],
-            state['logo_x'],
-            state['logo_y'],
-            state['logo_z'],
+            state['text_x'],
+            state['text_y'],
+            state['text_z'],
             state['stroke_fill'],
             state['stroke_width'],
             canvas_w=state['canvas_w'],
             canvas_h=state['canvas_h']
         )
 
-        with widget_logo:
+        with widget_lmage:
             if state['image_dir']:
                 st.title(f'{index:05d}')
                 state['image_x'] = st.slider(f"Image x", -state['canvas_w'], state['canvas_w'], 0, 10, key=f'image_x_{index}')
@@ -250,7 +250,7 @@ def main():
     with widget_text:
         preset_selected = st.selectbox("Size Preset", list(state['preset'].keys()))
         if preset_selected:
-            state['canvas_w'], state['canvas_h'], state['logo_x'], state['logo_y'], state['logo_z'] = state['preset'][preset_selected]
+            state['canvas_w'], state['canvas_h'], state['text_x'], state['text_y'], state['text_z'] = state['preset'][preset_selected]
         state['canvas_w'] = st.slider("Width", 0, 2560, state['canvas_w'], 8)
         state['canvas_h'] = st.slider("Height", 0, 2560, state['canvas_h'], 8)
 
@@ -259,15 +259,15 @@ def main():
     with widget_shape:
         state['shape'] = st.multiselect('Shape', state['shapelist'], default='circle')
 
-    widget_logo = st.sidebar.expander("Logo Settings")
-    with widget_logo:
+    widget_lmage = st.sidebar.expander("Image Settings")
+    with widget_lmage:
         # image_dir = 'images/logo'
         # for filename in os.listdir(image_dir):
         #     if filename.endswith(".png"):
         #         logolist.append(os.path.join(image_dir, filename))
         # logo = st.sidebar.selectbox("Logo", logolist)
-        state['logo'] = st.file_uploader("Logo Image", accept_multiple_files=True)
-        state['image_dir'] = state['logo'] if state['logo'] else [].append([])
+        state['image'] = st.file_uploader("Image", accept_multiple_files=True)
+        state['image_dir'] = state['image'] if state['image'] else [].append([])
 
     widget_gif = st.sidebar.expander("GIF Settings")
     with widget_gif:
@@ -286,7 +286,7 @@ def main():
     with widget_output:
         selected_ext = st.selectbox("File Format", state['exts'])
 
-    generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_text, widget_shape, widget_logo, widget_qr, widget_gif, widget_output)
+    generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_text, widget_shape, widget_lmage, widget_qr, widget_gif, widget_output)
 
     if state['filelist'] is None:
         pass
