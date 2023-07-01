@@ -247,8 +247,8 @@ def main():
 
     widget_view = st.sidebar.expander("View Settings")
     with widget_view:
-        state['gen_preview'] = st.checkbox("Preview All")
-        state['gen_gridview'] = st.checkbox("Grid View")
+        state['gen_preview'] = st.checkbox("Preview All", True)
+        state['gen_gridview'] = st.checkbox("Grid View", True)
         if state['gen_gridview']:
             state['grid_col'] = st.slider("Grid Col",1,8,2)
     state['cols'] = st.columns(state['grid_col'])
@@ -298,22 +298,22 @@ def main():
     if state['filelist'] is None:
         pass
     else:
-        if state['gen_preview']:
+        if state['gen_preview'] is not False:
             state['preview_image'] = state['filelist']
         else:
-            state['preview_image'] = state['filelist'][0]
+            state['preview_image'] = [state['filelist'][0]]
 
-    if state['gen_gridview']:
-        col_count = state['grid_col']
-        image_count = len(state['filelist'])
-        for idx, img in enumerate(state['filelist']):
-            col_idx = idx % col_count
-            if col_idx == 0:
-                col = st.columns(col_count)
-            col[col_idx].image(img, caption=os.path.basename(img), use_column_width=True)
-    else:
-        for img in state['filelist']:
-            st.image(img, caption=os.path.basename(img), use_column_width=True)
+        if state['gen_gridview'] is not False:
+            col_count = state['grid_col']
+            image_count = len(state['preview_image'])
+            for idx, img in enumerate(state['preview_image']):
+                col_idx = idx % col_count
+                if col_idx == 0:
+                    col = st.columns(col_count)
+                col[col_idx].image(img, caption=os.path.basename(img), use_column_width=True)
+        else:
+            for img in state['preview_image']:
+                st.image(img, caption=os.path.basename(img), use_column_width=True)
 
     with widget_output:
         if st.button("Create Zip"):
