@@ -74,7 +74,7 @@ def generate_images(state, temp_dir, selected_ext, widget_input, widget_view, wi
             state['fontlist'].append(os.path.join(state['font_path'], font_path))
 
     with widget_view:
-        limits_gen = st.slider("Limits of Generation", 0, 100, 4, 1)
+        limits_gen = st.slider("Limits of Generation", 0, 100, 8, 1)
 
     # Draw
     generated_count = 0
@@ -84,23 +84,22 @@ def generate_images(state, temp_dir, selected_ext, widget_input, widget_view, wi
 
         temp_fname = f"{index:05d}{selected_ext}"
         temp_image_path = os.path.join(temp_dir, temp_fname)
-
-        state['bc'], state['fc'] = colors
+        bc, fc = colors
         image = Image.new("RGBA", (state['canvas_w'], state['canvas_h']), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
 
         if sh == "fill":
-            draw.rectangle((0, 0, state['canvas_w'], state['canvas_h']), fill=state['bc'])
+            draw.rectangle((0, 0, state['canvas_w'], state['canvas_h']), fill=bc)
         elif sh == "circle":
             state['radius'] = 50
             state['circle_x'], state['circle_y'] = state['canvas_w'] * 0.5, state['canvas_h'] * 0.5
-            draw.ellipse((state['circle_x'] - state['radius'], state['circle_y'] - state['radius'], state['circle_x'] + state['radius'], state['circle_y'] + state['radius']), fill=state['bc'], outline=None)
+            draw.ellipse((state['circle_x'] - state['radius'], state['circle_y'] - state['radius'], state['circle_x'] + state['radius'], state['circle_y'] + state['radius']), fill=bc, outline=None)
         elif sh == "roundrect":
             state['rect_x'], state['rect_y'] = 0, 0
             state['radius'] = 40
-            draw.rounded_rectangle((state['rect_x'], state['rect_y'], state['rect_x'] + state['canvas_w'], state['rect_y'] + state['canvas_h']), state['radius'], fill=state['bc'], outline=None)
+            draw.rounded_rectangle((state['rect_x'], state['rect_y'], state['rect_x'] + state['canvas_w'], state['rect_y'] + state['canvas_h']), state['radius'], fill=bc, outline=None)
         elif sh == "frame":
-            draw.rectangle((state['margin'], state['margin'], state['canvas_w'] - state['margin'], state['canvas_h'] - state['margin']), fill=state['frame_fill'], outline=state['bc'], width=state['frame_width'])
+            draw.rectangle((state['margin'], state['margin'], state['canvas_w'] - state['margin'], state['canvas_h'] - state['margin']), fill=state['frame_fill'], outline=bc, width=state['frame_width'])
 
     # Insert
         with widget_draw:
@@ -115,7 +114,7 @@ def generate_images(state, temp_dir, selected_ext, widget_input, widget_view, wi
             image,
             words,
             font,
-            state['fc'],
+            fc,
             logo_x,
             logo_y,
             logo_z,
@@ -136,7 +135,6 @@ def generate_images(state, temp_dir, selected_ext, widget_input, widget_view, wi
         if state['gen_qr']:
             image = process_qr(image, qr_text, state['qr_size'], state['qr_position'], state['qr_border'], canvas_w=state['canvas_w'], canvas_h=state['canvas_h'])
 
-        st.write(temp_image_path)
         image.save(temp_image_path)
         state['filelist'].append(temp_image_path)
         generated_count += 1
@@ -172,9 +170,12 @@ def main():
             fc_pick = st.color_picker('Foreground color', '#fff',key=f'fc_pick')
 
         if st.button("Append"):
-            state['colorlist'].append(f'["{bc_pick}",{fc_pick}]')
+            state['colorlist'] = list(state['colorlist'])
+            state['colorlist'].append((bc_pick, fc_pick))
 
-        st.text_area("Colors", value="\n".join([f"{x}" for x in state['colorlist']]))
+
+
+        st.text_area("Colors", value="\n".join([f"{bc},{fc}" for bc, fc in state['colorlist']]))
 
 
         words = st.text_area("Words", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in state['wordlist']]))
