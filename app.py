@@ -257,7 +257,7 @@ def main():
 
     widget_shape = st.sidebar.expander("Shape Settings")
     with widget_shape:
-        state['shape'] = st.multiselect('Shape', state['shapelist'], default='circle')
+        state['shape'] = st.multiselect('Shape', state['shapelist'], default=['fill', 'circle'])
 
     widget_lmage = st.sidebar.expander("Image Settings")
     with widget_lmage:
