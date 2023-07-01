@@ -96,7 +96,7 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_v
             # state['circle_y'] = st.slider("Circle Center Y", 0, state['canvas_h'], int(state['canvas_h'] *0.5), key=f'all_{index}_circle_y')
             st.title(f'{index:05d}')
             if "circle" in sh:
-                state['radius'] = st.slider("Circle Radius", 1, 200, 40, key=f'{index}_radius')
+                state['radius'] = st.slider("Circle Radius", 1, 200, 80, key=f'{index}_radius')
                 state['circle_x'] = st.slider("Circle Center X", 0, state['canvas_w'], int(state['canvas_w'] *0.5), key=f'{index}_circle_x')
                 state['circle_y'] = st.slider("Circle Center Y", 0, state['canvas_h'], int(state['canvas_h'] *0.5), key=f'{index}_circle_y')
 
@@ -214,11 +214,11 @@ def main():
 
         append_colors = st.button("Append", key=f'append_colors')
         if append_colors:
-            state['colorlist'] = list(state['colorlist'])
-            state['colorlist'].append((bc_pick, fc_pick))
+            state['colorlist'].extend([(bc_pick, fc_pick) for bc_pick, fc_pick in [tuple(line.split(',')) for line in colors.splitlines() if line.strip()]])
         colors = st.text_area("Colors", value="\n".join([f"{bc},{fc}" for bc, fc in state['colorlist']]))
 
         state['colorlist'] = [tuple(line.split(',')) for line in colors.splitlines() if line.strip()]
+
 
         cols1, cols2 = st.columns([1, 1])
         with cols1:
