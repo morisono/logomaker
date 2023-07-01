@@ -9,13 +9,13 @@ from modules.ui import hide_ft_style
 import itertools
 
 def process_image(image, image_dir, image_x, image_y, image_z):
-    for logo_file, lx, ly, lz in zip(image_dir, image_x, image_y, image_z):
-        logo_image = Image.open(logo_file).convert("RGBA")
+    for img_path in image_dir:
+        logo_image = Image.open(img_path).convert("RGBA")
         image_w, image_h = logo_image.size
-        resized_image_w = int(image_w * lz)
-        resized_image_h = int(image_h * lz)
+        resized_image_w = int(image_w * image_z)
+        resized_image_h = int(image_h * image_z)
         resized_logo = logo_image.resize((resized_image_w, resized_image_h))
-        image.paste(resized_logo, (lx, ly), mask=resized_logo)
+        image.paste(resized_logo, (image_x, image_y), mask=resized_logo)
     return image
 
 def process_logo(image, words, fonts, fc, logo_x, logo_y, logo_z, stroke_fill, stroke_width, **kwargs):
@@ -57,7 +57,7 @@ def generate_gif(image_dir, ext, gif_fname, delay):
     return out_path
 
 
-def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_layout, widget_shape, widget_insert, widget_output):
+def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_layout, widget_shape,  widget_logo, widget_qr, widget_gif, widget_output):
 
     state['filelist'] = []
     # temp_image_path = os.path.join(subfolder_path, temp_fname)    # os.makedirs(temp_dir, exist_ok=True)
@@ -77,72 +77,100 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_v
 
     # Draw
     generated_count = 0
-    for index, (colors, words, sh, qr_text) in enumerate(itertools.product(state['colorlist'], state['wordlist'], state['shape'], state['qr_text']), start=1):
+    for index, (clrs, wrds, sh, qr_text) in enumerate(itertools.product(state['colorlist'], state['wordlist'], state['shape'], state['qr_text']), start=1):
         if generated_count >= limits_gen:
             break
 
         temp_fname = f"{index:05d}{selected_ext}"
         temp_image_path = os.path.join(temp_dir, temp_fname)
-        bc, fc = colors
+        state['bc'], state['fc'] = clrs
         image = Image.new("RGBA", (state['canvas_w'], state['canvas_h']), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
 
         with widget_shape:
+            # TODO: GLOBAL SETTINGS set default with state[]
+            # st.title(f'All')
+
+            # state['radius'] = st.slider("Circle Radius", 1, 200, state['radius'], key=f'all_{index}_radius')
+            # state['circle_x'] = st.slider("Circle Center X", 0, state['canvas_w'], int(state['canvas_w'] *0.5), key=f'all_{index}_canvas_w')
+            # state['circle_y'] = st.slider("Circle Center Y", 0, state['canvas_h'], int(state['canvas_h'] *0.5), key=f'all_{index}_circle_y')
+            st.title(f'{index:05d}')
             if "circle" in sh:
-                state['radius'] = st.slider("Circle Radius", 1, 200, state['radius'], key=f'{index}_radius')
-                state['circle_x'] = st.slider("Circle Center X", 0, state['canvas_w'], int(state['canvas_w'] *0.5), key=f'{index}_canvas_w')
+                state['radius'] = st.slider("Circle Radius", 1, 200, 40, key=f'{index}_radius')
+                state['circle_x'] = st.slider("Circle Center X", 0, state['canvas_w'], int(state['canvas_w'] *0.5), key=f'{index}_circle_x')
                 state['circle_y'] = st.slider("Circle Center Y", 0, state['canvas_h'], int(state['canvas_h'] *0.5), key=f'{index}_circle_y')
 
             elif "roundrect" in sh:
-                state['rect_x'] = st.slider("Round Rectangle X", 0, state['canvas_w'], int(state['canvas_w'] *0.5), key=f'{index}_rect_x')
-                state['rect_y'] = st.slider("Round Rectangle Y", 0, state['canvas_h'], int(state['canvas_h'] *0.5), key=f'{index}_rect_y')
+                state['rect_x'] = st.slider("Round Rectangle X", 0, 400, 0, key=f'{index}_rect_x')
+                state['rect_y'] = st.slider("Round Rectangle Y", 0, state['canvas_h'], 0, key=f'{index}_rect_y')
 
             elif "frame" in sh:
-                state['margin'] = st.slider("Frame margin", 0, min(state['canvas_w'], state['canvas_h'])//2, state[',argin'], key=f'{index}_margin')
+                state['margin'] = st.slider("Frame margin", 0, min(state['canvas_w'], state['canvas_h'])//2, 0, key=f'{index}_margin')
 
             if sh == "fill":
-                draw.rectangle((0, 0, state['canvas_w'], state['canvas_h']), fill=bc)
+                draw.rectangle((0, 0, state['canvas_w'], state['canvas_h']), fill=state['bc'])
             elif sh == "circle":
-                state['circle_x'], state['circle_y'] = state['canvas_w'] * 0.5, state['canvas_h'] * 0.5
-                draw.ellipse((state['circle_x'] - state['radius'], state['circle_y'] - state['radius'], state['circle_x'] + state['radius'], state['circle_y'] + state['radius']), fill=bc, outline=None)
+                draw.ellipse((state['circle_x'] - state['radius'], state['circle_y'] - state['radius'], state['circle_x'] + state['radius'], state['circle_y'] + state['radius']), fill=state['bc'], outline=None)
             elif sh == "roundrect":
-                draw.rounded_rectangle((state['rect_x'], state['rect_y'], state['rect_x'] + state['canvas_w'], state['rect_y'] + state['canvas_h']), state['radius'], fill=bc, outline=None)
+                draw.rounded_rectangle((state['rect_x'], state['rect_y'], state['rect_x'] + state['canvas_w'], state['rect_y'] + state['canvas_h']), state['radius'], fill=state['bc'], outline=None)
             elif sh == "frame":
-                draw.rectangle((state['margin'], state['margin'], state['canvas_w'] - state['margin'], state['canvas_h'] - state['margin']), fill=state['frame_fill'], outline=bc, width=state['frame_width'])
+                draw.rectangle((state['margin'], state['margin'], state['canvas_w'] - state['margin'], state['canvas_h'] - state['margin']), fill=state['frame_fill'], outline=state['bc'], width=state['frame_width'])
+                # draw.rounded_rectangle((state['rect_x'], state['rect_y'], state['rect_x'] + state['canvas_w'], state['rect_y'] + state['canvas_h']), state['radius'], fill=(0, 0, 0, 0), outline=None)
+
 
     # Insert
         with widget_layout:
-            font = st.selectbox(f"Font : \"{words}\"", state['fontlist'], key=f'font_{index}')
-            stroke_fill = st.text_input(f"Stroke fill: \"{words}\"", "gray", key=f'stroke_fill_{index}')
-            stroke_width = st.slider(f"Stroke width: \"{words}\"", 0, 20, 0, key=f'stroke_width_{index}')
-            logo_x = st.slider(f"Logo x : \"{words}\"", -500, 500, state['logo_x'], 10, key=f'logo_x_{index}')
-            logo_y = st.slider(f"Logo y : \"{words}\"", -500, 500, state['logo_y'], 10, key=f'logo_y_{index}')
-            logo_z = st.slider(f"Logo size : \"{words}\"", 0, 800, state['logo_z'], 8, key=f'logo_z_{index}')
+            st.title(f'{index:05d}')
+            state['font'] = st.selectbox(f"Font", state['fontlist'], key=f'font_{index}')
+            state['logo_x'] = st.slider(f"Logo x", -500, 500, 0, 10, key=f'logo_x_{index}')
+            state['logo_y'] = st.slider(f"Logo y", -500, 500, 0, 10, key=f'logo_y_{index}')
+            state['logo_z'] = st.slider(f"Logo size", 0, 100, 10, 8, key=f'logo_z_{index}')
+            state['stroke_width'] = st.slider(f"Stroke width", 0, 20, 0, key=f'stroke_width_{index}')
+            state['stroke_fill'] = st.text_input(f"Stroke fill", "gray", key=f'stroke_fill_{index}')
 
         image = process_logo(
             image,
-            words,
-            font,
-            fc,
-            logo_x,
-            logo_y,
-            logo_z,
-            stroke_fill,
-            stroke_width,
+            wrds,
+            state['font'],
+            state['fc'],
+            state['logo_x'],
+            state['logo_y'],
+            state['logo_z'],
+            state['stroke_fill'],
+            state['stroke_width'],
             canvas_w=state['canvas_w'],
             canvas_h=state['canvas_h']
         )
 
-        if state['image_dir']:
-            with widget_shape:
-                state['image_x'] = st.slider(f"Logo x: \"{word}\"", -state['canvas_w'], state['canvas_w'], 0, 10, key=f'image_x_{index}')
-                state['image_y'] = st.slider(f"Logo y: \"{word}\"", -state['canvas_h'], state['canvas_h'], 0, 10, key=f'image_y_{index}')
+        with widget_logo:
+            if state['image_dir']:
+                st.title(f'{index:05d}')
+                state['image_x'] = st.slider(f"Image x", -state['canvas_w'], state['canvas_w'], 0, 10, key=f'image_x_{index}')
+                state['image_y'] = st.slider(f"Image y", -state['canvas_h'], state['canvas_h'], 0, 10, key=f'image_y_{index}')
+                state['image_z'] = st.slider(f"Image z", 0.2, 10.0, 0.2, 0.1, key=f'image_z_{index}')
 
-                image = process_image(image, state['image_dir'], state['image_x'], state['image_y'], state['image_z'])
+                image = process_image(
+                image,
+                state['image_dir'],
+                state['image_x'],
+                state['image_y'],
+                state['image_z']
+                )
 
+        with widget_qr:
+            if state['gen_qr']:
+                st.title(f'{index:05d}')
+                state['qr_position'] = st.slider(f"QR Position",int(0),  int(50), key=f'qr_position_{index}')
+                state['qr_size'] = st.slider(f"QR Size", 0, 50, 10, key=f'qr_size_{index}')
 
-        if state['gen_qr']:
-            image = process_qr(image, qr_text, state['qr_size'], state['qr_position'], state['qr_border'], canvas_w=state['canvas_w'], canvas_h=state['canvas_h'])
+                image = process_qr(image,
+                 qr_text,
+                 state['qr_size'],
+                 state['qr_position'],
+                 state['qr_border'],
+                 canvas_w=state['canvas_w'],
+                 canvas_h=state['canvas_h']
+                 )
 
         image.save(temp_image_path)
         state['filelist'].append(temp_image_path)
@@ -231,8 +259,8 @@ def main():
     with widget_shape:
         state['shape'] = st.multiselect('Shape', state['shapelist'], default='circle')
 
-    widget_insert = st.sidebar.expander("Insert Settings")
-    with widget_insert:
+    widget_logo = st.sidebar.expander("Logo Settings")
+    with widget_logo:
         # image_dir = 'images/logo'
         # for filename in os.listdir(image_dir):
         #     if filename.endswith(".png"):
@@ -241,21 +269,24 @@ def main():
         state['logo'] = st.file_uploader("Logo Image", accept_multiple_files=True)
         state['image_dir'] = state['logo'] if state['logo'] else [].append([])
 
+    widget_gif = st.sidebar.expander("GIF Settings")
+    with widget_gif:
+        state['gen_gif'] = st.checkbox("GIF Animation", True)
+        if state['gen_gif']:
+            delay = st.slider("Delay", 0, 5000, 0, 100, key='delay')
+
+    widget_qr = st.sidebar.expander("QR Settings")
+    with widget_qr:
         state['gen_qr'] = st.checkbox("QR", True)
         if state['gen_qr']:
             state['qr_text'] = st.text_area("QR text", "example.com")
             state['qr_text'] = [line for line in state['qr_text'].splitlines() if line.strip()]
 
-        state['gen_gif'] = st.checkbox("GIF Animation", True)
-        if state['gen_gif']:
-            delay = st.slider("Delay", 0, 5000, 0, 100, key='delay')
-
-
     widget_output = st.sidebar.expander("Output Settings")
     with widget_output:
         selected_ext = st.selectbox("File Format", state['exts'])
 
-    generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_layout, widget_shape, widget_insert, widget_output)
+    generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_layout, widget_shape, widget_logo, widget_qr, widget_gif, widget_output)
 
     if state['filelist'] is None:
         pass
