@@ -74,7 +74,7 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_v
             state['fontlist'].append(os.path.join(state['font_path'], font_path))
 
     with widget_view:
-        limits_gen = st.slider("Limits of Generation", 0, 100, state['limits_gen'], 1)
+        limits_gen = st.slider("Limits of Generation", 0, 1000, state['limits_gen'], 1)
 
     # Draw
     generated_count = 0
