@@ -305,14 +305,14 @@ def main():
 
     if state['gen_gridview']:
         col_count = state['grid_col']
-        image_count = len(state['preview_image'])
-        for idx, img in enumerate(state['preview_image']):
+        image_count = len(state['filelist'])
+        for idx, img in enumerate(state['filelist']):
             col_idx = idx % col_count
             if col_idx == 0:
                 col = st.columns(col_count)
             col[col_idx].image(img, caption=os.path.basename(img), use_column_width=True)
     else:
-        for img in state['preview_image']:
+        for img in state['filelist']:
             st.image(img, caption=os.path.basename(img), use_column_width=True)
 
     with widget_output:
