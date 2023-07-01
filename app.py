@@ -57,7 +57,7 @@ def generate_gif(image_dir, ext, gif_fname, delay):
     return out_path
 
 
-def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_layout, widget_shape,  widget_logo, widget_qr, widget_gif, widget_output):
+def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_text, widget_shape,  widget_logo, widget_qr, widget_gif, widget_output):
 
     state['filelist'] = []
     # temp_image_path = os.path.join(subfolder_path, temp_fname)    # os.makedirs(temp_dir, exist_ok=True)
@@ -119,7 +119,7 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_v
 
 
     # Insert
-        with widget_layout:
+        with widget_text:
             st.title(f'{index:05d}')
             state['font'] = st.selectbox(f"Font", state['fontlist'], key=f'font_{index}')
             state['logo_x'] = st.slider(f"Logo x", -500, 500, 0, 10, key=f'logo_x_{index}')
@@ -246,8 +246,8 @@ def main():
             state['grid_col'] = st.slider("Grid Col",1,8,2)
     state['cols'] = st.columns(state['grid_col'])
 
-    widget_layout = st.sidebar.expander("Layout Settings")
-    with widget_layout:
+    widget_text = st.sidebar.expander("Text Settings")
+    with widget_text:
         preset_selected = st.selectbox("Size Preset", list(state['preset'].keys()))
         if preset_selected:
             state['canvas_w'], state['canvas_h'], state['logo_x'], state['logo_y'], state['logo_z'] = state['preset'][preset_selected]
@@ -286,7 +286,7 @@ def main():
     with widget_output:
         selected_ext = st.selectbox("File Format", state['exts'])
 
-    generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_layout, widget_shape, widget_logo, widget_qr, widget_gif, widget_output)
+    generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_text, widget_shape, widget_logo, widget_qr, widget_gif, widget_output)
 
     if state['filelist'] is None:
         pass
