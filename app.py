@@ -1,5 +1,4 @@
 import os
-import glob
 import datetime
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
@@ -58,12 +57,12 @@ def generate_gif(image_dir, ext, gif_fname, delay):
     return out_path
 
 
-def generate_images(state, temp_dir, selected_ext, widget_input, widget_view, widget_draw, widget_insert, widget_output):
+def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_layout, widget_shape, widget_insert, widget_output):
 
     state['filelist'] = []
-    # temp_image_path = os.path.join(subfolder_path, temp_fname)    # os.makedirs(temp_path, exist_ok=True)
+    # temp_image_path = os.path.join(subfolder_path, temp_fname)    # os.makedirs(temp_dir, exist_ok=True)
     # for words in state['wordlist']:
-        # subfolder_path = os.path.join(temp_path, f"{words}")
+        # subfolder_path = os.path.join(temp_dir, f"{words}")
         # os.makedirs(subfolder_path, exist_ok=True)
     # font_paths = fm.findSystemFonts()
     # fontlist = [os.path.splitext(os.path.basename(font_path))[0] for font_path in font_paths]
@@ -74,7 +73,7 @@ def generate_images(state, temp_dir, selected_ext, widget_input, widget_view, wi
             state['fontlist'].append(os.path.join(state['font_path'], font_path))
 
     with widget_view:
-        limits_gen = st.slider("Limits of Generation", 0, 100, 8, 1)
+        limits_gen = st.slider("Limits of Generation", 0, 100, state['limits_gen'], 1)
 
     # Draw
     generated_count = 0
@@ -88,21 +87,31 @@ def generate_images(state, temp_dir, selected_ext, widget_input, widget_view, wi
         image = Image.new("RGBA", (state['canvas_w'], state['canvas_h']), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
 
-        if sh == "fill":
-            draw.rectangle((0, 0, state['canvas_w'], state['canvas_h']), fill=bc)
-        elif sh == "circle":
-            state['radius'] = 50
-            state['circle_x'], state['circle_y'] = state['canvas_w'] * 0.5, state['canvas_h'] * 0.5
-            draw.ellipse((state['circle_x'] - state['radius'], state['circle_y'] - state['radius'], state['circle_x'] + state['radius'], state['circle_y'] + state['radius']), fill=bc, outline=None)
-        elif sh == "roundrect":
-            state['rect_x'], state['rect_y'] = 0, 0
-            state['radius'] = 40
-            draw.rounded_rectangle((state['rect_x'], state['rect_y'], state['rect_x'] + state['canvas_w'], state['rect_y'] + state['canvas_h']), state['radius'], fill=bc, outline=None)
-        elif sh == "frame":
-            draw.rectangle((state['margin'], state['margin'], state['canvas_w'] - state['margin'], state['canvas_h'] - state['margin']), fill=state['frame_fill'], outline=bc, width=state['frame_width'])
+        with widget_shape:
+            if "circle" in sh:
+                state['radius'] = st.slider("Circle Radius", 1, 200, state['radius'], key=f'{index}_radius')
+                state['circle_x'] = st.slider("Circle Center X", 0, state['canvas_w'], int(state['canvas_w'] *0.5), key=f'{index}_canvas_w')
+                state['circle_y'] = st.slider("Circle Center Y", 0, state['canvas_h'], int(state['canvas_h'] *0.5), key=f'{index}_circle_y')
+
+            elif "roundrect" in sh:
+                state['rect_x'] = st.slider("Round Rectangle X", 0, state['canvas_w'], int(state['canvas_w'] *0.5), key=f'{index}_rect_x')
+                state['rect_y'] = st.slider("Round Rectangle Y", 0, state['canvas_h'], int(state['canvas_h'] *0.5), key=f'{index}_rect_y')
+
+            elif "frame" in sh:
+                state['margin'] = st.slider("Frame margin", 0, min(state['canvas_w'], state['canvas_h'])//2, state[',argin'], key=f'{index}_margin')
+
+            if sh == "fill":
+                draw.rectangle((0, 0, state['canvas_w'], state['canvas_h']), fill=bc)
+            elif sh == "circle":
+                state['circle_x'], state['circle_y'] = state['canvas_w'] * 0.5, state['canvas_h'] * 0.5
+                draw.ellipse((state['circle_x'] - state['radius'], state['circle_y'] - state['radius'], state['circle_x'] + state['radius'], state['circle_y'] + state['radius']), fill=bc, outline=None)
+            elif sh == "roundrect":
+                draw.rounded_rectangle((state['rect_x'], state['rect_y'], state['rect_x'] + state['canvas_w'], state['rect_y'] + state['canvas_h']), state['radius'], fill=bc, outline=None)
+            elif sh == "frame":
+                draw.rectangle((state['margin'], state['margin'], state['canvas_w'] - state['margin'], state['canvas_h'] - state['margin']), fill=state['frame_fill'], outline=bc, width=state['frame_width'])
 
     # Insert
-        with widget_draw:
+        with widget_layout:
             font = st.selectbox(f"Font : \"{words}\"", state['fontlist'], key=f'font_{index}')
             stroke_fill = st.text_input(f"Stroke fill: \"{words}\"", "gray", key=f'stroke_fill_{index}')
             stroke_width = st.slider(f"Stroke width: \"{words}\"", 0, 20, 0, key=f'stroke_width_{index}')
@@ -125,9 +134,9 @@ def generate_images(state, temp_dir, selected_ext, widget_input, widget_view, wi
         )
 
         if state['image_dir']:
-            with widget_draw:
-                state['image_x'].append(st.slider(f"Logo x: \"{word}\"", -state['canvas_w'], state['canvas_w'], 0, 10, key=f'image_x_{index}'))
-                state['image_y'].append(st.slider(f"Logo y: \"{word}\"", -state['canvas_h'], state['canvas_h'], 0, 10, key=f'image_y_{index}'))
+            with widget_shape:
+                state['image_x'] = st.slider(f"Logo x: \"{word}\"", -state['canvas_w'], state['canvas_w'], 0, 10, key=f'image_x_{index}')
+                state['image_y'] = st.slider(f"Logo y: \"{word}\"", -state['canvas_h'], state['canvas_h'], 0, 10, key=f'image_y_{index}')
 
                 image = process_image(image, state['image_dir'], state['image_x'], state['image_y'], state['image_z'])
 
@@ -143,8 +152,8 @@ def generate_images(state, temp_dir, selected_ext, widget_input, widget_view, wi
     if state['gen_gif']:
         images_path = temp_dir
         # images_path = subfolder_path
-        with widget_insert:
-            out_path = generate_gif(images_path, selected_ext, state['gif_fname'], state['delay'])
+        with widget_output:
+            out_path = generate_gif(images_path, selected_ext, state['gif_fname'], delay)
             state['filelist'].append(out_path)
 
 
@@ -159,27 +168,47 @@ def main():
         initial_sidebar_state='auto')
     hide_ft_style()
     load_settings()
+
+    temp_dir = tempfile.gettempdir()
+    state['timestamp'] = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
     title = st.title("Logo Maker Web UI")
     settings = st.sidebar.title("Settings")
+
     widget_input = st.sidebar.expander("Input Settings")
     with widget_input:
+
         cols1, cols2 = st.columns([1, 1])
         with cols1:
             bc_pick = st.color_picker('Background color',key=f'bc_pick')
         with cols2:
             fc_pick = st.color_picker('Foreground color', '#fff',key=f'fc_pick')
 
-        if st.button("Append"):
+        append_colors = st.button("Append", key=f'append_colors')
+        if append_colors:
             state['colorlist'] = list(state['colorlist'])
             state['colorlist'].append((bc_pick, fc_pick))
+        colors = st.text_area("Colors", value="\n".join([f"{bc},{fc}" for bc, fc in state['colorlist']]))
+
+        state['colorlist'] = [tuple(line.split(',')) for line in colors.splitlines() if line.strip()]
+
+        cols1, cols2 = st.columns([1, 1])
+        with cols1:
+            word1 = st.text_input('Word 1',key=f'word1')
+        with cols2:
+            word2 = st.text_input('Word 2',key=f'word2')
+
+        append_words = st.button("Append", key=f'append_words')
+        if append_words:
+            state['wordlist'] = list(state['wordlist'])
+            state['wordlist'].append((word1, word2))
+        words = st.text_area("Words", value="\n".join([f"{arg1},{arg2}" for arg1, arg2 in state['wordlist']]))
+        state['wordlist'] = [tuple(line.split(',')) for line in words.splitlines() if line.strip()]
 
 
+        if st.button("Reset"):
+            clear_temp_folder(temp_dir)
 
-        st.text_area("Colors", value="\n".join([f"{bc},{fc}" for bc, fc in state['colorlist']]))
-
-
-        words = st.text_area("Words", value="\n".join([f"{arg1};{arg2}" for arg1, arg2 in state['wordlist']]))
-        state['wordlist'] = [tuple(line.split(';')) for line in words.splitlines() if line.strip()]
 
     widget_view = st.sidebar.expander("View Settings")
     with widget_view:
@@ -189,27 +218,18 @@ def main():
             state['grid_col'] = st.slider("Grid Col",1,8,2)
     state['cols'] = st.columns(state['grid_col'])
 
-    widget_draw = st.sidebar.expander("Draw Settings")
-    with widget_draw:
+    widget_layout = st.sidebar.expander("Layout Settings")
+    with widget_layout:
         preset_selected = st.selectbox("Size Preset", list(state['preset'].keys()))
         if preset_selected:
             state['canvas_w'], state['canvas_h'], state['logo_x'], state['logo_y'], state['logo_z'] = state['preset'][preset_selected]
         state['canvas_w'] = st.slider("Width", 0, 2560, state['canvas_w'], 8)
         state['canvas_h'] = st.slider("Height", 0, 2560, state['canvas_h'], 8)
 
-        state['shape'] = st.multiselect('Shape', ["fill", "circle", "roundrect", "frame"], default='fill')
-        if state['shape']:
-            if "circle" in state['shape']:
-                state['radius'] = st.slider("Circle Radius", 1, 100, 50)
-                state['circle_x'] = st.slider("Circle Center X", 0, state['canvas_w'], int(state['canvas_w'] *0.5))
-                state['circle_y'] = st.slider("Circle Center Y", 0, state['canvas_h'], int(state['canvas_h'] *0.5))
 
-            elif "roundrect" in state['shape']:
-                state['rect_x'] = st.slider("Round Rectangle X", 0, state['canvas_w'], int(state['canvas_w'] *0.5))
-                state['rect_y'] = st.slider("Round Rectangle Y", 0, state['canvas_h'], int(state['canvas_h'] *0.5))
-
-            elif "frame" in state['shape']:
-                state['margin'] = st.slider("Frame margin", 0, min(state['canvas_w'], state['canvas_h'])//2, 50)
+    widget_shape = st.sidebar.expander("Shape Settings")
+    with widget_shape:
+        state['shape'] = st.multiselect('Shape', state['shapelist'], default='circle')
 
     widget_insert = st.sidebar.expander("Insert Settings")
     with widget_insert:
@@ -228,17 +248,14 @@ def main():
 
         state['gen_gif'] = st.checkbox("GIF Animation", True)
         if state['gen_gif']:
-            state['delay'] = st.slider("Delay", 0, 5000, 0, 100)
+            delay = st.slider("Delay", 0, 5000, 0, 100, key='delay')
 
-    temp_dir = tempfile.gettempdir()
-    state['timestamp'] = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    state['size'] = f"{state['canvas_w']}x{state['canvas_h']}"
 
     widget_output = st.sidebar.expander("Output Settings")
     with widget_output:
         selected_ext = st.selectbox("File Format", state['exts'])
 
-    generate_images(state, temp_dir, selected_ext, widget_input, widget_view, widget_draw, widget_insert, widget_output)
+    generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_view, widget_layout, widget_shape, widget_insert, widget_output)
 
     if state['filelist'] is None:
         pass
@@ -265,9 +282,6 @@ def main():
 
         st.download_button("Export settings (.json)", data=open
         (state['settings_fname'], 'rb').read(), file_name=state['settings_fname'])
-
-
-    # clear_temp_folder(temp_path)
 
 
 if __name__ == "__main__":
