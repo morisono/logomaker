@@ -191,10 +191,9 @@ def main():
 
     widget_draw = st.sidebar.expander("Draw Settings")
     with widget_draw:
-        size_selected = st.selectbox("Size Preset", list(state['size_preset'].keys()))
-        if size_selected:
-            preset_size = state['size_preset'][size_selected]
-        state['canvas_w'], state['canvas_h'] = preset_size
+        preset_selected = st.selectbox("Size Preset", list(state['preset'].keys()))
+        if preset_selected:
+            state['canvas_w'], state['canvas_h'], state['logo_x'], state['logo_y'], state['logo_z'] = state['preset'][preset_selected]
         state['canvas_w'] = st.slider("Width", 0, 2560, state['canvas_w'], 8)
         state['canvas_h'] = st.slider("Height", 0, 2560, state['canvas_h'], 8)
 
