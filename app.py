@@ -301,7 +301,7 @@ def main():
         if state['gen_preview']:
             state['preview_image'] = state['filelist']
         else:
-            state['preview_image'] = state['filelist'][:limits_gen]
+            state['preview_image'] = state['filelist'][0]
 
     if state['gen_gridview']:
         col_count = state['grid_col']
