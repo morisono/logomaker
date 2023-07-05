@@ -1,3 +1,5 @@
+![](images/img-01.png)
+
 # Simple Logomaker
 
 ## Demo
