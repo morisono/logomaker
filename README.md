@@ -3,4 +3,4 @@
 # Simple Logomaker
 
 ## Demo
-https://logomaker.streamlit.app/
+https://logo-maker.streamlit.app/
