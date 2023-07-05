@@ -17,14 +17,14 @@ def clear_temp_folder(folder_path):
         except Exception as e:
             print(f"Failed to delete {file_path}. Reason: {e}")
 
-def load_settings():
-    with open('settings.json') as f:
+def load_settings(file):
+    with open(file) as f:
         config = json.load(f)
     for k, v in config.items():
         st.session_state[k] = v
 
-def load_ui_config():
-    with open('ui-config.json') as f:
+def load_ui_config(file):
+    with open(file) as f:
         config = json.load(f)
     for k, v in config.items():
         if k not in st.session_state:
