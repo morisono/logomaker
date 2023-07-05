@@ -53,19 +53,20 @@
     "fonts/Delagothicone Regular.ttf",
     "fonts/LibreBarcode39 Regular.ttf"
   ],
-  "colorlist": [["red", "blue"], ["green", "black"]],
+  "colorlist": [["tan", "black"], ["lightgray", "white"]],
   "shapelist": ["fill", "circle", "roundrect", "frame"],
-  "wordlist": [["Designed by", "M"], ["For", "Mass Production"]],
+  "wordlist": [["Designed by", ""], ["M", ""]],
   "logolist": [],
   "exts": [".png", ".jpg", ".tiff", ".gif", ".eps", ".ico", ".webp"],
   "preset": {
-    "2:1 (1024, 512)": [1024, 512, 0, 0, 150],
     "Square (1024, 1024)": [1024, 1024, 0, 0, 150],
     "Banner (1500, 500)": [1500, 500, 0, 0, 200],
     "WQHD (2560, 1440)": [2560, 1440, 0, 0, 380],
     "FHD (1920, 1080)": [1920, 1080, 0, 0, 280],
     "HD (1280, 720)": [1280, 720, 0, 0, 180],
     "4:3 (1280, 960)": [1280, 960, 0, 0, 180],
+    "2:1 (256, 128)": [256, 128, 0, 0, 150],
+    "2:1 (1024, 512)": [1024, 512, 0, 0, 150],
     "2:1 (1280, 640)": [1280, 640, 0, 0, 180],
     "3:2 (1440, 960)": [1440, 960, 0, 0, 180],
     "FHD vert (1080, 1920)": [1080, 1920, 0, 0, 160],
@@ -81,8 +82,7 @@
       ["yellow", "white"],
       ["magenta", "cyan"],
       ["blue", "yellow"]
-    ],
-    "wordlist": [["Designed by", "m.s."]]
+    ]
   },
   "logo_path": []
 }
