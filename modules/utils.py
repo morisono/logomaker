@@ -1,8 +1,9 @@
 import os
 import re
 import markdown
-import cairosvg
+# import cairosvg
 import pyshorteners
+from PIL import Image, ImageDraw, ImageFont
 
 
 def markdown_to_svg(markdown_text, width ,height):
