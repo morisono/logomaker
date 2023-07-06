@@ -54,6 +54,14 @@ def filename_matched(query, target_list):
     except Exception as e:
         return e
 
+def filename_excluded(query, image_paths):
+    excluded_files = []
+    for image_path in image_paths:
+        filename = os.path.basename(image_path)
+        if query not in filename:
+            excluded_files.append(image_path)
+    return excluded_files
+
 
 def full_text_search(query, path_list):
     matched_files = []
@@ -75,6 +83,32 @@ def full_text_search(query, path_list):
 
     return matched_files
 
+def filter_by_date_range(from_time, to_time, image_paths):
+    filtered_files = []
+    for image_path in image_paths:
+        file_time_str = os.path.basename(image_path).split('-')[1].split('_')[0]
+        file_time = datetime.datetime.strptime(file_time_str, "%Y%m%d").time()
+        if from_time <= file_time <= to_time:
+            filtered_files.append(image_path)
+    return filtered_files
+
+def filter_by_language(language, image_paths):
+    filtered_files = []
+    for image_path in image_paths:
+        # Assuming language information is extracted from the file name
+        file_language = os.path.basename(image_path).split('-')[0]
+        if language == file_language:
+            filtered_files.append(image_path)
+    return filtered_files
+
+def filter_by_location(location, image_paths):
+    filtered_files = []
+    for image_path in image_paths:
+        # Assuming location information is extracted from the file name
+        file_location = os.path.basename(image_path).split('-')[0]
+        if location == file_location:
+            filtered_files.append(image_path)
+    return filtered_files
 
 def recursive_search(pattern, path='.'):
     matched_files = []
