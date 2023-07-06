@@ -422,7 +422,7 @@ def main():
         state['canvas_w'] = st.slider("Width", 0, 2560, state['canvas_w'], 8)
         state['canvas_h'] = st.slider("Height", 0, 2560, state['canvas_h'], 8)
 
-        state['shape'] = st.multiselect('Shape', state['shapelist'], default=['fill'])
+        state['shape'] = st.multiselect('Shape', state['shapelist'], state['shape'])
 
     widget_image = st.sidebar.expander("Image")
     with widget_image:

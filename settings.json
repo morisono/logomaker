@@ -11,7 +11,7 @@
     "canvas_h": 400,
     "colors": [],
     "words": [],
-    "shape": [],
+    "shape": "roundrect",
     "fonts": [],
     "text_x": 0,
     "text_y": 0,
