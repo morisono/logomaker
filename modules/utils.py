@@ -1,9 +1,10 @@
 import os
 import re
-import markdown
+# import markdown
 # import cairosvg
 import pyshorteners
 from PIL import Image, ImageDraw, ImageFont
+import hashlib
 
 
 def markdown_to_svg(markdown_text, width ,height):
@@ -14,6 +15,15 @@ def markdown_to_svg(markdown_text, width ,height):
     except Exception as e:
         return e
 
+def get_md5_hash(string):
+    try:
+        md5_hash = hashlib.md5()
+        md5_hash.update(string.encode('utf-8'))
+        return md5_hash.hexdigest()
+    except Exception as e:
+        pass
+        return
+        # return f'Fetch failed cause an error: {e}'
 
 def svg_to_png(svg_data, output_path):
     cairosvg.svg2png(bytestring=svg_data, write_to=output_path)
@@ -149,4 +159,5 @@ def shorten_url(url):
     s = pyshorteners.Shortener(api_key="YOUR_KEY")
     short_url = s.bitly.short(url)
     return short_url
+
 

@@ -7,3 +7,5 @@ pyshorteners==1.0.1
 qrcode==7.4.2
 Requests==2.31.0
 streamlit==1.22.0
+selenium==4.10.0
+webdriver-manager

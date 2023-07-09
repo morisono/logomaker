@@ -5,11 +5,20 @@
     "gen_gridview": false,
     "gen_idcon": false,
     "image_dir": [],
-    "timestamp": "20230629_165601",
+    "timestamp": "",
     "limits_gen": 8,
     "canvas_w": 400,
     "canvas_h": 400,
-    "colors": [],
+    "colorlist": [
+        [
+            "tan",
+            "black"
+        ],
+        [
+            "tan",
+            "white"
+        ]
+    ],
     "words": [],
     "shape": "roundrect",
     "fonts": [],
@@ -22,6 +31,10 @@
     "stroke_fill": [
         "black"
     ],
+    "masks": [],
+    "image_x": 0,
+    "image_y": 0,
+    "image_z": 0.2,
     "stroke_width": 0,
     "grid_col": 2,
     "cols": 2,
@@ -40,8 +53,8 @@
     "qr_border": 0,
     "qr_position": 0,
     "idcon_id": [
-        "example_id",
-        "example_id_2"
+        "01_example_id",
+        "02_identicon"
     ],
     "idcon_ext": [
         "png"
@@ -49,66 +62,17 @@
     "idcon_text": [
         ""
     ],
-    "idcon_size": 800,
+    "idcon_size": 200,
     "idcon_shape": [
         "fill"
     ],
     "idcon_position": 0,
     "delay": 0,
     "font_dir": "fonts",
-    "fontlist": [
-        "fonts/Genkai Mincho Extra Bold.ttf",
-        "fonts/Arial.ttf",
-        "fonts/Malgun Gothic Bold.ttf",
-        "fonts/Koku Mincho Regular.ttf",
-        "fonts/Impact.ttf",
-        "fonts/Mistral.ttf",
-        "fonts/Freestyle Script.ttf",
-        "fonts/Monoton Regular.ttf",
-        "fonts/Zenantique Regular.ttf",
-        "fonts/Nosifer Regular.ttf",
-        "fonts/Notocoloremoji Regular.ttf",
-        "fonts/Nicokaku V2.ttf",
-        "fonts/Limelight Regular.ttf",
-        "fonts/Righteous Regular.ttf",
-        "fonts/Delagothicone Regular.ttf",
-        "fonts/LibreBarcode39 Regular.ttf",
-        "fonts/Genkai Mincho Extra Bold.ttf",
-        "fonts/Malgun Gothic Bold.ttf",
-        "fonts/Koku Mincho Regular.ttf",
-        "fonts/Impact.ttf",
-        "fonts/Mistral.ttf",
-        "fonts/Freestyle Script.ttf",
-        "fonts/Monoton Regular.ttf",
-        "fonts/Zenantique Regular.ttf",
-        "fonts/Nosifer Regular.ttf",
-        "fonts/Notocoloremoji Regular.ttf",
-        "fonts/Nicokaku V2.ttf",
-        "fonts/Limelight Regular.ttf",
-        "fonts/Righteous Regular.ttf",
-        "fonts/Arial.ttf",
-        "fonts/Delagothicone Regular.ttf",
-        "fonts/LibreBarcode39 Regular.ttf",
-        "fonts/Genkai Mincho Extra Bold.ttf",
-        "fonts/Malgun Gothic Bold.ttf",
-        "fonts/Koku Mincho Regular.ttf",
-        "fonts/Impact.ttf",
-        "fonts/Mistral.ttf",
-        "fonts/Freestyle Script.ttf",
-        "fonts/Monoton Regular.ttf",
-        "fonts/Zenantique Regular.ttf",
-        "fonts/Nosifer Regular.ttf",
-        "fonts/Notocoloremoji Regular.ttf",
-        "fonts/Nicokaku V2.ttf",
-        "fonts/Limelight Regular.ttf",
-        "fonts/Righteous Regular.ttf",
-        "fonts/Arial.ttf",
-        "fonts/Delagothicone Regular.ttf",
-        "fonts/LibreBarcode39 Regular.ttf"
-    ],
     "zip_fname": "images.zip",
     "settings_fname": "settings.json",
     "gif_fname": "output.gif",
     "preview_image": [],
-    "image_paths": []
+    "image_paths": [],
+    "google_image_paths": []
 }

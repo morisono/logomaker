@@ -3,7 +3,7 @@
   "page_icon": ":smiley:",
   "layout": "wide",
   "font_path": "fonts",
-    "fontlist": [
+  "fontlist": [
     "fonts/Genkai Mincho Extra Bold.ttf",
     "fonts/Arial.ttf",
     "fonts/Malgun Gothic Bold.ttf",
@@ -53,12 +53,12 @@
     "fonts/Delagothicone Regular.ttf",
     "fonts/LibreBarcode39 Regular.ttf"
   ],
-  "colorlist": [["tan", "black"], ["lightgray", "white"]],
   "shapelist": ["fill", "circle", "roundrect", "frame"],
-  "wordlist": [["Designed by", ""], ["M", ""]],
+  "wordlist": [["Designed",""]],
   "logolist": [],
   "exts": [".png", ".jpg", ".tiff", ".gif", ".eps", ".ico", ".webp"],
   "preset": {
+    "Square (256, 256)": [256, 256, 0, 0, 50],
     "Square (1024, 1024)": [1024, 1024, 0, 0, 150],
     "Banner (1500, 500)": [1500, 500, 0, 0, 200],
     "WQHD (2560, 1440)": [2560, 1440, 0, 0, 380],

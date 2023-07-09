@@ -9,9 +9,12 @@ from modules.common import load_settings, load_ui_config, create_zip, export_set
 from modules.ui import hide_ft_style
 from modules.utils import markdown_to_svg, combine_images
 from modules.utils import filename_matched, filename_excluded, filter_by_date_range, filter_by_language, filter_by_location, full_text_search
+from modules.automator import google_image_search
+
 import itertools
-import requests
+import urllib.request
 from io import BytesIO
+
 
 def process_shape(image, shape, **kwargs):
     draw = ImageDraw.Draw(image)
@@ -35,6 +38,17 @@ def process_image(image, image_dir, image_x, image_y, image_z):
         resized_image_h = int(image_h * image_z)
         resized_logo = logo_image.resize((resized_image_w, resized_image_h))
         image.paste(resized_logo, (image_x, image_y), mask=resized_logo)
+    return image
+
+def process_mask(image, mask_dir, mask_x, mask_y, mask_z):
+    for img_path in mask_dir:
+        mask_image = image.open(img_path).convert("RGBA")
+        mask_w, mask_h = mask_image.size
+        resized_mask_w = int(mask_w * mask_z)
+        resized_mask_h = int(mask_h * mask_z)
+        resized_logo = mask_image.resize((resized_mask_w, resized_mask_h))
+        # TODO: Opacity modification
+        image.paste(resized_logo, (mask_x, mask_y), mask=resized_logo)
     return image
 
 def process_logotext(image, words, fonts, fc, text_x, text_y, text_z, stroke_fill, stroke_width, **kwargs):
@@ -63,30 +77,24 @@ def process_qr(image, qr_text, qr_size, qr_position, qr_border, **kwargs):
 def process_idcon(image, id, size, ext, text, position, **kwargs):
     url = f"https://avatar.vercel.sh/{id}.{ext}?size={size}&text={text}"
     position = (int((kwargs['canvas_w']-size) * 0.50),  int((kwargs['canvas_h']-size) * 0.50))
-    # params = {
-    #     'size': ext,
-    #     'text': text
-    # }
 
-    response = requests.get(url)
-    # response = requests.get(url, params=params)
     try:
-        if response.status_code == 200:
-            image_data = response.content
-            identicon = Image.open(BytesIO(image_data))
+        with urllib.request.urlopen(url) as response:
+            if response.status == 200:
+                image_data = response.read()
+                identicon = Image.open(BytesIO(image_data))
 
-            mask = Image.new("L", (size, size), 0)
-            draw = ImageDraw.Draw(mask)
-            circle_mask = (0, 0, size, size)
-            draw.ellipse(circle_mask, fill=255)
-            trimmed_image = Image.new("RGBA", (kwargs['canvas_w'], kwargs['canvas_h']))
-            trimmed_image.paste(identicon, (0,0), mask=mask)
+                mask = Image.new("L", (size, size), 0)
+                draw = ImageDraw.Draw(mask)
+                circle_mask = (0, 0, size, size)
+                draw.ellipse(circle_mask, fill=255)
+                trimmed_image = Image.new("RGBA", (kwargs['canvas_w'], kwargs['canvas_h']))
+                trimmed_image.paste(identicon, (0,0), mask=mask)
 
-            result_image = image.copy()
-            result_image.paste(trimmed_image, position, mask=trimmed_image)
+                result_image = image.copy()
+                result_image.paste(trimmed_image, position, mask=trimmed_image)
 
-            # image.paste(identicon, position)
-            return result_image
+                return result_image
     except Exception as e:
         st.write(e)
     return None
@@ -119,7 +127,7 @@ def grid_view(file_paths, col_count):
         col[col_idx].image(image_url, caption=os.path.basename(image_url), use_column_width=True)
 
 
-def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_filter, widget_view, widget_text, widget_shape, widget_image, widget_qr, widget_idcon, widget_gif, widget_svg, widget_output):
+def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_filter, widget_view, widget_text, widget_shape, widget_image, widget_mask, widget_qr, widget_idcon, widget_gif, widget_svg, widget_output):
 
     state['image_paths'] = []
     # temp_image_path = os.path.join(subfolder_path, temp_fname)    # os.makedirs(temp_dir, exist_ok=True)
@@ -133,6 +141,21 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
     for font_path in os.listdir(state['font_dir']):
         if font_path.endswith(".ttf"):
             state['fontlist'].append(os.path.join(state['font_path'], font_path))
+
+
+    with widget_input:
+
+        st.subheader("Mutiply Switch")
+        check_lists = {
+            'colorlist': st.checkbox("colorlist", value=True),
+            'wordlist': st.checkbox("wordlist", value=True),
+            'shape': st.checkbox("shape", value=True),
+            'qr_text': st.checkbox("qr_text", value=True),
+            'idcon_id': st.checkbox("idcon_id", value=True)
+        }
+
+        checked_lists = [label for label, checked in check_lists.items() if checked]
+
 
     with widget_filter:
         pass
@@ -167,15 +190,25 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
             state['margin'] = st.slider("Frame margin", 0, min(state['canvas_w'], state['canvas_h'])//2, 0, key=f'margin_global')
 
     generated_count = 0
-    for index, (clrs, wrds, sh, qr_text, idcon_id) in enumerate(itertools.product(state['colorlist'], state['wordlist'], state['shape'], state['qr_text'], state['idcon_id']), start=1):
+    for index, (values) in enumerate(itertools.product(*[state[label] for label in checked_lists]), start=1):
+
         if generated_count >= limits_gen:
             break
 
         temp_fname = f"{index:05d}-{state['timestamp']}{selected_ext}"
         temp_image_path = os.path.join(temp_dir, temp_fname)
-        state['bc'], state['fc'] = clrs
         image = Image.new("RGBA", (state['canvas_w'], state['canvas_h']), (0, 0, 0, 0))
 
+        if 'colorlist' in checked_lists:
+            clrs = values[checked_lists.index('colorlist')]
+            state['bc'], state['fc'] = clrs
+        else:
+            clrs = [state['colorlist'][0]]
+
+        if 'shape' in checked_lists:
+            sh = values[checked_lists.index('shape')]
+        else:
+            sh = [state['colors'][0]]
         with widget_shape:
             st.title(f'{index:05d}')
             if "circle" in sh:
@@ -200,6 +233,10 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
                     margin=state['margin']
                 )
 
+        if 'idcon_id' in checked_lists:
+            idcon_id = values[checked_lists.index('idcon_id')]
+        else:
+            idcon_id = [state['idcon_id'][0]]
         with widget_idcon:
             if state['gen_idcon']:
                 st.title(f'{index:05d}')
@@ -218,8 +255,12 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
                     state['idcon_position'],
                     canvas_w=state['canvas_w'],
                     canvas_h=state['canvas_h']
-                 )
+                )
 
+        if 'wordlist' in checked_lists:
+            wrds = values[checked_lists.index('wordlist')]
+        else:
+            wrds = [state['wordlist'][0]]
         with widget_text:
             st.title(f'{index:05d}')
             state['font'] = st.selectbox(f"Font", state['fontlist'], key=f'font_{index}')
@@ -242,22 +283,40 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
                 canvas_w=state['canvas_w'],
                 canvas_h=state['canvas_h']
             )
+        # with widget_image:
+        #     if state['image_dir']:
+        #         st.title(f'{index:05d}')
+        #         state['image_x'] = st.slider(f"Image x", -state['canvas_w'], state['canvas_w'], 0, 10, key=f'image_x_{index}')
+        #         state['image_y'] = st.slider(f"Image y", -state['canvas_h'], state['canvas_h'], 0, 10, key=f'image_y_{index}')
+        #         state['image_z'] = st.slider(f"Image z", 0.2, 10.0, 0.2, 0.1, key=f'image_z_{index}')
 
-        with widget_image:
-            if state['image_dir']:
-                st.title(f'{index:05d}')
-                state['image_x'] = st.slider(f"Image x", -state['canvas_w'], state['canvas_w'], 0, 10, key=f'image_x_{index}')
-                state['image_y'] = st.slider(f"Image y", -state['canvas_h'], state['canvas_h'], 0, 10, key=f'image_y_{index}')
-                state['image_z'] = st.slider(f"Image z", 0.2, 10.0, 0.2, 0.1, key=f'image_z_{index}')
+        #         image = process_image(
+        #         image,
+        #         state['image_dir'],
+        #         state['image_x'],
+        #         state['image_y'],
+        #         state['image_z']
+        #         )
 
-                image = process_image(
-                image,
-                state['image_dir'],
-                state['image_x'],
-                state['image_y'],
-                state['image_z']
-                )
+        # with widget_mask:
+        #     if state['masks_dir']:
+        #         st.title(f'{index:05d}')
+        #         state['mask_x'] = st.slider(f"mask x", -state['canvas_w'], state['canvas_w'], 0, 10, key=f'mask_x_{index}')
+        #         state['mask_y'] = st.slider(f"mask y", -state['canvas_h'], state['canvas_h'], 0, 10, key=f'mask_y_{index}')
+        #         state['mask_z'] = st.slider(f"mask z", 0.2, 10.0, 0.2, 0.1, key=f'mask_z_{index}')
 
+        #         image = process_mask(
+        #         image,
+        #         state['masks_dir'],
+        #         state['mask_x'],
+        #         state['mask_y'],
+        #         state['mask_z']
+        #         )
+
+        if 'qr_text' in checked_lists:
+            qr_text = values[checked_lists.index('qr_text')]
+        else:
+            qr_text = [state['qr_text'][0]]
         with widget_qr:
             if state['gen_qr']:
                 st.title(f'{index:05d}')
@@ -265,14 +324,13 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
                 state['qr_size'] = st.slider(f"QR Size", 0, 50, state['qr_size'], key=f'qr_size_{index}')
 
                 image = process_qr(image,
-                 qr_text,
-                 state['qr_size'],
-                 state['qr_position'],
-                 state['qr_border'],
-                 canvas_w=state['canvas_w'],
-                 canvas_h=state['canvas_h']
-                 )
-
+                qr_text,
+                state['qr_size'],
+                state['qr_position'],
+                state['qr_border'],
+                canvas_w=state['canvas_w'],
+                canvas_h=state['canvas_h']
+                )
         image.save(temp_image_path)
         state['image_paths'].append(temp_image_path)
         generated_count += 1
@@ -355,53 +413,53 @@ def main():
             clear_temp_folder(temp_dir)
 
     widget_filter = st.sidebar.expander("Filter")
-    with widget_filter:
-        match_q = st.text_input("Matching", placeholder="words to match")
-        matched_files = []
-        if match_q is not None:
-            matched_files = filename_matched(match_q, state['image_paths'])
-            if matched_files:
-                st.write("Matching Files:")
-                st.write(matched_files)
-            else:
-                st.write("No matching files found.")
+    # with widget_filter:
+    #     match_q = st.text_input("Matching", placeholder="words to match")
+    #     matched_files = []
+    #     if match_q is not None:
+    #         matched_files = filename_matched(match_q, state['image_paths'])
+    #         if matched_files:
+    #             st.write("Matching Files:")
+    #             st.write(matched_files)
+    #         else:
+    #             st.write("No matching files found.")
 
-        exclude_q = st.text_input("Excluding", placeholder="words to exclide")
-        if exclude_q is not None:
-            excluded_files = filename_excluded(exclude_q, state['image_paths'])
-            if excluded_files:
-                st.write("Excluded Files:")
-                st.write(excluded_files)
-            else:
-                st.write("No excluded files found.")
+    #     exclude_q = st.text_input("Excluding", placeholder="words to exclide")
+    #     if exclude_q is not None:
+    #         excluded_files = filename_excluded(exclude_q, state['image_paths'])
+    #         if excluded_files:
+    #             st.write("Excluded Files:")
+    #             st.write(excluded_files)
+    #         else:
+    #             st.write("No excluded files found.")
 
-        from_q = st.time_input("From ", datetime.time(8, 45))
-        to_q = st.time_input("To ", datetime.time(8, 45))
-        if from_q is not None and to_q is not None:
-            filtered_by_date = filter_by_date_range(from_q, to_q, state['image_paths'])
-            if filtered_by_date:
-                st.write("Files within Date Range:")
-                st.write(filtered_by_date)
-            else:
-                st.write("No files found within the specified date range.")
+    #     from_q = st.time_input("From ", datetime.time(8, 45))
+    #     to_q = st.time_input("To ", datetime.time(8, 45))
+    #     if from_q is not None and to_q is not None:
+    #         filtered_by_date = filter_by_date_range(from_q, to_q, state['image_paths'])
+    #         if filtered_by_date:
+    #             st.write("Files within Date Range:")
+    #             st.write(filtered_by_date)
+    #         else:
+    #             st.write("No files found within the specified date range.")
 
-        lang_q = st.selectbox("Language", [""])
-        if lang_q != "":
-            filtered_by_language = filter_by_language(lang_q, state['image_paths'])
-            if filtered_by_language:
-                st.write("Files filtered by Language:")
-                st.write(filtered_by_language)
-            else:
-                st.write("No files found for the specified language.")
+    #     lang_q = st.selectbox("Language", [""])
+    #     if lang_q != "":
+    #         filtered_by_language = filter_by_language(lang_q, state['image_paths'])
+    #         if filtered_by_language:
+    #             st.write("Files filtered by Language:")
+    #             st.write(filtered_by_language)
+    #         else:
+    #             st.write("No files found for the specified language.")
 
-        location_q = st.text_input("Location", [""])
-        if location_q != "":
-            filtered_by_location = filter_by_location(location_q, state['image_paths'])
-            if filtered_by_location:
-                st.write("Files filtered by Location:")
-                st.write(filtered_by_location)
-            else:
-                st.write("No files found for the location")
+    #     location_q = st.text_input("Location", [""])
+    #     if location_q != "":
+    #         filtered_by_location = filter_by_location(location_q, state['image_paths'])
+    #         if filtered_by_location:
+    #             st.write("Files filtered by Location:")
+    #             st.write(filtered_by_location)
+    #         else:
+    #             st.write("No files found for the location")
 
     widget_view = st.sidebar.expander("View")
     with widget_view:
@@ -426,13 +484,39 @@ def main():
 
     widget_image = st.sidebar.expander("Image")
     with widget_image:
-        # image_dir = 'images/logo'
-        # for filename in os.listdir(image_dir):
-        #     if filename.endswith(".png"):
-        #         logolist.append(os.path.join(image_dir, filename))
-        # logo = st.sidebar.selectbox("Logo", logolist)
-        state['image'] = st.file_uploader("Image", accept_multiple_files=True)
-        state['image_dir'] = state['image'] if state['image'] else [].append([])
+        state['uploaded_image'] = st.file_uploader("Image", accept_multiple_files=True)
+        state['image_dir'] = [state['uploaded_image'] if state['uploaded_image'] else [].append([])]
+
+        search_queries = st.text_input('Google Search Keyword: ', "Apple")
+        image_formats = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'bmp', 'tiff', 'webp', 'ico', 'icons', 'pdf']
+        image_format = st.selectbox('Formats: ', image_formats)
+        limits = st.slider('Limits: ', 0, 100, 2)
+        image_size = st.text_input("image_size", value="500")
+        aspect_ratio = st.text_input("aspect_ratio", value="s")
+        color = st.text_input("color", value="gray")
+        image_type = st.text_input("image_type", value="clipart")
+        region = st.text_input("region", value="jp")
+        safe_search = st.text_input("safe_search", value="active")
+        license = st.text_input("license", value="fmc")
+
+        if search_queries:
+            with st.spinner("Progress ..."):
+                # state['google_image_paths'] = google_image_search(search_queries, image_format, limits, temp_dir, image_size, aspect_ratio, color, image_type, region, safe_search, license)
+                pass
+
+        if state['google_image_paths'] is None:
+            pass
+        else:
+            state['image_dir'].append(state['google_image_paths'])
+            # state['image_paths'].append(state['google_image_paths'])
+#
+    widget_mask = st.sidebar.expander("Mask")
+    with widget_mask:
+        state['masks_dir'] = 'images/masks'
+        for filename in os.listdir(state['masks_dir']):
+            if filename.endswith(".png"):
+                state['masks'].append(os.path.join(state['masks_dir'], filename))
+        state['mask'] = st.selectbox("Mask", state['masks'])
 
     widget_qr = st.sidebar.expander("QR")
     with widget_qr:
@@ -461,16 +545,17 @@ def main():
 
         markdown_text = st.text_area("Input markdown")
         if markdown_text:
-            svg_text = markdown_to_svg(markdown_text, svg_w, svg_h)
-            st.markdown(svg_text)
-
+            # svg_text = markdown_to_svg(markdown_text, svg_w, svg_h)
+            # st.markdown(svg_text)
+            pass # TODO
         combine = st.button("Combine Images")
         if combine:
             tile_x = st.slider("Tile x")
             tile_y = st.slider("Tile y")
             image_paths = state['image_paths']
-            combined_image = combine_images(image_paths, tile_x, tile_y)
-            st.images(combined_image, caption='Combined Image', use_column_width=True)
+            # combined_image = combine_images(image_paths, tile_x, tile_y)
+            # st.images(combined_image, caption='Combined Image', use_column_width=True)
+            pass # TODO
 
     widget_output = st.sidebar.expander("Output")
     with widget_output:
@@ -478,7 +563,7 @@ def main():
 
     try:
         with st.spinner("Processing..."):
-            generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_filter, widget_view, widget_text, widget_shape, widget_image, widget_qr, widget_idcon, widget_gif, widget_svg, widget_output)
+            generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_filter, widget_view, widget_text, widget_shape, widget_image, widget_mask, widget_qr, widget_idcon, widget_gif, widget_svg, widget_output)
     except Exception as e:
         st.error(e)
 
