@@ -202,87 +202,79 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
         if 'colorlist' in checked_lists:
             clrs = values[checked_lists.index('colorlist')]
             state['bc'], state['fc'] = clrs
-        else:
-            clrs = [state['colorlist'][0]]
 
         if 'shape' in checked_lists:
             sh = values[checked_lists.index('shape')]
-        else:
-            sh = [state['colors'][0]]
-        with widget_shape:
-            st.title(f'{index:05d}')
-            if "circle" in sh:
-                state['radius'] = st.slider("Circle Radius", 1, 200, state['radius'], key=f'radius_{index}')
-                state['circle_x'] = st.slider("Circle Center X", 0, state['canvas_w'], state['circle_x'], key=f'circle_x_{index}')
-                state['circle_y'] = st.slider("Circle Center Y", 0, state['canvas_h'], state['circle_y'], key=f'circle_y_{index}')
+            with widget_shape:
+                st.title(f'{index:05d}')
+                if "circle" in sh:
+                    state['radius'] = st.slider("Circle Radius", 1, 200, state['radius'], key=f'radius_{index}')
+                    state['circle_x'] = st.slider("Circle Center X", 0, state['canvas_w'], state['circle_x'], key=f'circle_x_{index}')
+                    state['circle_y'] = st.slider("Circle Center Y", 0, state['canvas_h'], state['circle_y'], key=f'circle_y_{index}')
 
-            elif "roundrect" in sh:
-                state['rect_x'] = st.slider("Round Rectangle X", 0, 400, 0, key=f'rect_x_{index}')
-                state['rect_y'] = st.slider("Round Rectangle Y", 0, state['canvas_h'], 0, key=f'rect_y_{index}')
+                elif "roundrect" in sh:
+                    state['rect_x'] = st.slider("Round Rectangle X", 0, 400, 0, key=f'rect_x_{index}')
+                    state['rect_y'] = st.slider("Round Rectangle Y", 0, state['canvas_h'], 0, key=f'rect_y_{index}')
 
-            elif "frame" in sh:
-                state['margin'] = st.slider("Frame margin", 0, min(state['canvas_w'], state['canvas_h'])//2, 0, key=f'margin_{index}')
+                elif "frame" in sh:
+                    state['margin'] = st.slider("Frame margin", 0, min(state['canvas_w'], state['canvas_h'])//2, 0, key=f'margin_{index}')
 
-            image = process_shape(
-                    image,
-                    sh,
-                    radius=state['radius'],
-                    circle_x=state['circle_x'],
-                    rect_x=state['rect_x'],
-                    rect_y=state['rect_y'],
-                    margin=state['margin']
-                )
+                image = process_shape(
+                        image,
+                        sh,
+                        radius=state['radius'],
+                        circle_x=state['circle_x'],
+                        rect_x=state['rect_x'],
+                        rect_y=state['rect_y'],
+                        margin=state['margin']
+                    )
 
         if 'idcon_id' in checked_lists:
             idcon_id = values[checked_lists.index('idcon_id')]
-        else:
-            idcon_id = [state['idcon_id'][0]]
-        with widget_idcon:
-            if state['gen_idcon']:
-                st.title(f'{index:05d}')
-                state['idcon_size'] = st.slider("Size", 5, 2560, state['idcon_size'], key=f'idcon_size_{index}')
-                state['idcon_ext'] = st.selectbox("Format", ["png", "svg", "jpg"], key=f'idcon_ext_{index}')
-                state['idcon_text'] = ""
-                if state['idcon_ext'] == "svg":
-                    state['idcon_text'] = st.text_input("Text", "", key=f'idcon_text_{index}')
-                state['idcon_position'] = st.slider(f"idcon Position", 0, 2560, state['idcon_position'], key=f'idcon_position_{index}')
+            with widget_idcon:
+                if state['gen_idcon']:
+                    st.title(f'{index:05d}')
+                    state['idcon_size'] = st.slider("Size", 5, 2560, state['idcon_size'], key=f'idcon_size_{index}')
+                    state['idcon_ext'] = st.selectbox("Format", ["png", "svg", "jpg"], key=f'idcon_ext_{index}')
+                    state['idcon_text'] = ""
+                    if state['idcon_ext'] == "svg":
+                        state['idcon_text'] = st.text_input("Text", "", key=f'idcon_text_{index}')
+                    state['idcon_position'] = st.slider(f"idcon Position", 0, 2560, state['idcon_position'], key=f'idcon_position_{index}')
 
-                image = process_idcon(image,
-                    idcon_id,
-                    state['idcon_size'],
-                    state['idcon_ext'],
-                    state['idcon_text'],
-                    state['idcon_position'],
-                    canvas_w=state['canvas_w'],
-                    canvas_h=state['canvas_h']
-                )
+                    image = process_idcon(image,
+                        idcon_id,
+                        state['idcon_size'],
+                        state['idcon_ext'],
+                        state['idcon_text'],
+                        state['idcon_position'],
+                        canvas_w=state['canvas_w'],
+                        canvas_h=state['canvas_h']
+                    )
 
         if 'wordlist' in checked_lists:
             wrds = values[checked_lists.index('wordlist')]
-        else:
-            wrds = [state['wordlist'][0]]
-        with widget_text:
-            st.title(f'{index:05d}')
-            state['font'] = st.selectbox(f"Font", state['fontlist'], key=f'font_{index}')
-            state['text_x'] = st.slider(f"Text x", -500, 500, state['text_x'], 10, key=f'text_x_{index}')
-            state['text_y'] = st.slider(f"Text y", -500, 500, state['text_y'], 10, key=f'text_y_{index}')
-            state['text_z'] = st.slider(f"Text size", 0, 1000, state['text_z'], 8, key=f'text_z_{index}')
-            state['stroke_width'] = st.slider(f"Stroke width", 0, 20, state['stroke_width'], key=f'stroke_width_{index}')
-            state['stroke_fill'] = st.text_input(f"Stroke fill", state['stroke_fill'], key=f'stroke_fill_{index}')
+            with widget_text:
+                st.title(f'{index:05d}')
+                state['font'] = st.selectbox(f"Font", state['fontlist'], key=f'font_{index}')
+                state['text_x'] = st.slider(f"Text x", -500, 500, state['text_x'], 10, key=f'text_x_{index}')
+                state['text_y'] = st.slider(f"Text y", -500, 500, state['text_y'], 10, key=f'text_y_{index}')
+                state['text_z'] = st.slider(f"Text size", 0, 1000, state['text_z'], 8, key=f'text_z_{index}')
+                state['stroke_width'] = st.slider(f"Stroke width", 0, 20, state['stroke_width'], key=f'stroke_width_{index}')
+                state['stroke_fill'] = st.text_input(f"Stroke fill", state['stroke_fill'], key=f'stroke_fill_{index}')
 
-            image = process_logotext(
-                image,
-                wrds,
-                state['font'],
-                state['fc'],
-                state['text_x'],
-                state['text_y'],
-                state['text_z'],
-                state['stroke_fill'],
-                state['stroke_width'],
-                canvas_w=state['canvas_w'],
-                canvas_h=state['canvas_h']
-            )
+                image = process_logotext(
+                    image,
+                    wrds,
+                    state['font'],
+                    state['fc'],
+                    state['text_x'],
+                    state['text_y'],
+                    state['text_z'],
+                    state['stroke_fill'],
+                    state['stroke_width'],
+                    canvas_w=state['canvas_w'],
+                    canvas_h=state['canvas_h']
+                )
         # with widget_image:
         #     if state['image_dir']:
         #         st.title(f'{index:05d}')
@@ -315,26 +307,24 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
 
         if 'qr_text' in checked_lists:
             qr_text = values[checked_lists.index('qr_text')]
-        else:
-            qr_text = [state['qr_text'][0]]
-        with widget_qr:
-            if state['gen_qr']:
-                st.title(f'{index:05d}')
-                state['qr_position'] = st.slider(f"QR Position",int(0), int(50), state['qr_position'], key=f'qr_position_{index}')
-                state['qr_size'] = st.slider(f"QR Size", 0, 50, state['qr_size'], key=f'qr_size_{index}')
+            with widget_qr:
+                if state['gen_qr']:
+                    st.title(f'{index:05d}')
+                    state['qr_position'] = st.slider(f"QR Position",int(0), int(50), state['qr_position'], key=f'qr_position_{index}')
+                    state['qr_size'] = st.slider(f"QR Size", 0, 50, state['qr_size'], key=f'qr_size_{index}')
 
-                image = process_qr(image,
-                qr_text,
-                state['qr_size'],
-                state['qr_position'],
-                state['qr_border'],
-                canvas_w=state['canvas_w'],
-                canvas_h=state['canvas_h']
-                )
-        image.save(temp_image_path)
-        state['image_paths'].append(temp_image_path)
-        generated_count += 1
-        # st.write(state['image_paths'])
+                    image = process_qr(image,
+                    qr_text,
+                    state['qr_size'],
+                    state['qr_position'],
+                    state['qr_border'],
+                    canvas_w=state['canvas_w'],
+                    canvas_h=state['canvas_h']
+                    )
+            image.save(temp_image_path)
+            state['image_paths'].append(temp_image_path)
+            generated_count += 1
+            # st.write(state['image_paths'])
 
     if state['gen_gif']:
         gif_fname = f"00000-{state['timestamp']}.gif"
