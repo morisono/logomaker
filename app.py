@@ -103,6 +103,7 @@ def process_idcon(image, id, size, ext, text, position, **kwargs):
 def generate_gif(image_dir, ext, gif_fname, delay):
     image_paths = []
     frames = []
+
     for image_path in os.listdir(image_dir):
         if image_path.endswith(ext):
             image_paths.append(os.path.join(image_dir, image_path))
@@ -265,7 +266,7 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
 
                     image = process_logotext(
                         image,
-                        wrds,
+                        wrd,
                         state['font'],
                         state['fc'],
                         state['text_x'],
