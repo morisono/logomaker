@@ -253,28 +253,29 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
 
         if 'wordlist' in checked_lists:
             wrds = values[checked_lists.index('wordlist')]
-            with widget_text:
-                st.title(f'{index:05d}')
-                state['font'] = st.selectbox(f"Font", state['fontlist'], key=f'font_{index}')
-                state['text_x'] = st.slider(f"Text x", -500, 500, state['text_x'], 10, key=f'text_x_{index}')
-                state['text_y'] = st.slider(f"Text y", -500, 500, state['text_y'], 10, key=f'text_y_{index}')
-                state['text_z'] = st.slider(f"Text size", 0, 1000, state['text_z'], 8, key=f'text_z_{index}')
-                state['stroke_width'] = st.slider(f"Stroke width", 0, 20, state['stroke_width'], key=f'stroke_width_{index}')
-                state['stroke_fill'] = st.text_input(f"Stroke fill", state['stroke_fill'], key=f'stroke_fill_{index}')
+            for wrd in wrds:
+                with widget_text:
+                    st.title(f'{index:05d}')
+                    state['font'] = st.selectbox(f"Font: {wrd}", state['fontlist'], key=f'font_{wrd}{index}')
+                    state['text_x'] = st.slider(f"Text x: {wrd}", -500, 500, state['text_x'], 10, key=f'text_x_{wrd}{index}')
+                    state['text_y'] = st.slider(f"Text y: {wrd}", -500, 500, state['text_y'], 10, key=f'text_y_{wrd}{index}')
+                    state['text_z'] = st.slider(f"Text size: {wrd}", 0, 1000, state['text_z'], 8, key=f'text_z_{wrd}{index}')
+                    state['stroke_width'] = st.slider(f"Stroke width : {wrd}", 0, 20, state['stroke_width'], key=f'stroke_width_{wrd}{index}')
+                    state['stroke_fill'] = st.text_input(f"Stroke fill: {wrd}", state['stroke_fill'], key=f'stroke_fill_{wrd}{index}')
 
-                image = process_logotext(
-                    image,
-                    wrds,
-                    state['font'],
-                    state['fc'],
-                    state['text_x'],
-                    state['text_y'],
-                    state['text_z'],
-                    state['stroke_fill'],
-                    state['stroke_width'],
-                    canvas_w=state['canvas_w'],
-                    canvas_h=state['canvas_h']
-                )
+                    image = process_logotext(
+                        image,
+                        wrds,
+                        state['font'],
+                        state['fc'],
+                        state['text_x'],
+                        state['text_y'],
+                        state['text_z'],
+                        state['stroke_fill'],
+                        state['stroke_width'],
+                        canvas_w=state['canvas_w'],
+                        canvas_h=state['canvas_h']
+                    )
         # with widget_image:
         #     if state['image_dir']:
         #         st.title(f'{index:05d}')
@@ -372,30 +373,30 @@ def main():
         if import_settings:
             load_settings(import_settings)
 
-        cols1, cols2 = st.columns([1, 1])
-        with cols1:
-            bc_pick = st.color_picker('Background color',key=f'bc_pick')
-        with cols2:
-            fc_pick = st.color_picker('Foreground color', '#fff',key=f'fc_pick')
+        # cols1, cols2 = st.columns([1, 1])
+        # with cols1:
+        #     bc_pick = st.color_picker('Background color',key=f'bc_pick')
+        # with cols2:
+        #     fc_pick = st.color_picker('Foreground color', '#fff',key=f'fc_pick')
 
-        append_colors = st.button("Append", key=f'append_colors')
-        if append_colors:
-            state['colorlist'].extend([(bc_pick, fc_pick) for bc_pick, fc_pick in [tuple(line.split(',')) for line in colors.splitlines() if line.strip()]])
+        # append_colors = st.button("Append", key=f'append_colors')
+        # if append_colors:
+        #     state['colorlist'].extend([(bc_pick, fc_pick) for bc_pick, fc_pick in [tuple(line.split(',')) for line in colors.splitlines() if line.strip()]])
         colors = st.text_area("Colors", value="\n".join([f"{bc},{fc}" for bc, fc in state['colorlist']]))
 
         state['colorlist'] = [tuple(line.split(',')) for line in colors.splitlines() if line.strip()]
 
 
-        cols1, cols2 = st.columns([1, 1])
-        with cols1:
-            word1 = st.text_input('Word 1',key=f'word1')
-        with cols2:
-            word2 = st.text_input('Word 2',key=f'word2')
+        # cols1, cols2 = st.columns([1, 1])
+        # with cols1:
+        #     word1 = st.text_input('Word 1',key=f'word1')
+        # with cols2:
+        #     word2 = st.text_input('Word 2',key=f'word2')
 
-        append_words = st.button("Append", key=f'append_words')
-        if append_words:
-            state['wordlist'] = list(state['wordlist'])
-            state['wordlist'].append((word1, word2))
+        # append_words = st.button("Append", key=f'append_words')
+        # if append_words:
+        #     state['wordlist'] = list(state['wordlist'])
+        #     state['wordlist'].append((word1, word2))
         words = st.text_area("Words", value="\n".join([f"{arg1},{arg2}" for arg1, arg2 in state['wordlist']]))
         state['wordlist'] = [tuple(line.split(',')) for line in words.splitlines() if line.strip()]
 
