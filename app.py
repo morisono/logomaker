@@ -256,7 +256,7 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
             for wrd in wrds:
                 with widget_text:
                     st.title(f'{index:05d}')
-                    state['font'][index] = st.selectbox(f"Font: {wrd}", state['fontlist'][0], key=f'font_{wrd}{index}')
+                    state['font'] = st.selectbox(f"Font: {wrd}", state['fontlist'][0], key=f'font_{wrd}{index}')
                     state['text_x'][index] = st.slider(f"Text x: {wrd}{index}", -500, 500, state['text_x'][0], 10, key=f'text_x_{wrd}{index}')
                     state['text_y'][index] = st.slider(f"Text y: {wrd}{index}", -500, 500, state['text_y'][0], 10, key=f'text_y_{wrd}{index}')
                     state['text_z'][index] = st.slider(f"Text size: {wrd}{index}", 0, 1000, state['text_z'][0], 8, key=f'text_z_{wrd}{index}')
@@ -266,13 +266,13 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
                     image = process_logotext(
                         image,
                         wrd,
-                        state['font'][index],
+                        state['font'],
                         state['fc'],
                         state['text_x'][index],
                         state['text_y'][index],
                         state['text_z'][index],
-                        state['stroke_fill'][index],
-                        state['stroke_width'][index],
+                        state['stroke_fill'],
+                        state['stroke_width'],
                         canvas_w=state['canvas_w'],
                         canvas_h=state['canvas_h']
                     )
