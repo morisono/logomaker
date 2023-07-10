@@ -51,18 +51,17 @@ def process_mask(image, mask_dir, mask_x, mask_y, mask_z):
         image.paste(resized_logo, (mask_x, mask_y), mask=resized_logo)
     return image
 
-def process_logotext(image, words, fonts, fc, text_x, text_y, text_z, stroke_fill, stroke_width, **kwargs):
-    for word in words:
-        font = ImageFont.truetype(fonts, text_z)
-        text_bbox = ImageDraw.Draw(image).textbbox((0, 0), word, font=font)
-        text_width = text_bbox[2] - text_bbox[0]
-        text_height = text_bbox[3] - text_bbox[1]
+def process_logotext(image, word, fonts, fc, text_x, text_y, text_z, stroke_fill, stroke_width, **kwargs):
+    font = ImageFont.truetype(fonts, text_z)
+    text_bbox = ImageDraw.Draw(image).textbbox((0, 0), word, font=font)
+    text_width = text_bbox[2] - text_bbox[0]
+    text_height = text_bbox[3] - text_bbox[1]
 
-        adjusted_text_x = int((kwargs['canvas_w'] - text_width) * 0.5 + text_x)
-        adjusted_text_y = int((kwargs['canvas_h'] - text_height) * 0.5 + text_y)
+    adjusted_text_x = int((kwargs['canvas_w'] - text_width) * 0.5 + text_x)
+    adjusted_text_y = int((kwargs['canvas_h'] - text_height) * 0.5 + text_y)
 
-        ImageDraw.Draw(image).text((adjusted_text_x, adjusted_text_y),
-                    text=word, stroke_fill=stroke_fill, stroke_width=stroke_width, fill=fc, font=font, anchor='lt')
+    ImageDraw.Draw(image).text((adjusted_text_x, adjusted_text_y),
+                text=word, stroke_fill=stroke_fill, stroke_width=stroke_width, fill=fc, font=font, anchor='lt')
     return image
 
 
@@ -258,9 +257,9 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
                 with widget_text:
                     st.title(f'{index:05d}')
                     state['font'] = st.selectbox(f"Font: {wrd}", state['fontlist'], key=f'font_{wrd}{index}')
-                    state['text_x'] = st.slider(f"Text x: {wrd}", -500, 500, state['text_x'], 10, key=f'text_x_{wrd}{index}')
-                    state['text_y'] = st.slider(f"Text y: {wrd}", -500, 500, state['text_y'], 10, key=f'text_y_{wrd}{index}')
-                    state['text_z'] = st.slider(f"Text size: {wrd}", 0, 1000, state['text_z'], 8, key=f'text_z_{wrd}{index}')
+                    state['text_x'] = st.slider(f"Text x: {wrd}{index}", -500, 500, state['text_x'], 10, key=f'text_x_{wrd}{index}')
+                    state['text_y'] = st.slider(f"Text y: {wrd}{index}", -500, 500, state['text_y'], 10, key=f'text_y_{wrd}{index}')
+                    state['text_z'] = st.slider(f"Text size: {wrd}{index}", 0, 1000, state['text_z'], 8, key=f'text_z_{wrd}{index}')
                     state['stroke_width'] = st.slider(f"Stroke width : {wrd}", 0, 20, state['stroke_width'], key=f'stroke_width_{wrd}{index}')
                     state['stroke_fill'] = st.text_input(f"Stroke fill: {wrd}", state['stroke_fill'], key=f'stroke_fill_{wrd}{index}')
 
