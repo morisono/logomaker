@@ -256,23 +256,23 @@ def generate_images(state, temp_dir, selected_ext, delay, widget_input, widget_f
             for wrd in wrds:
                 with widget_text:
                     st.title(f'{index:05d}')
-                    state['font'] = st.selectbox(f"Font: {wrd}", state['fontlist'], key=f'font_{wrd}{index}')
-                    state['text_x'] = st.slider(f"Text x: {wrd}{index}", -500, 500, state['text_x'], 10, key=f'text_x_{wrd}{index}')
-                    state['text_y'] = st.slider(f"Text y: {wrd}{index}", -500, 500, state['text_y'], 10, key=f'text_y_{wrd}{index}')
-                    state['text_z'] = st.slider(f"Text size: {wrd}{index}", 0, 1000, state['text_z'], 8, key=f'text_z_{wrd}{index}')
-                    state['stroke_width'] = st.slider(f"Stroke width : {wrd}", 0, 20, state['stroke_width'], key=f'stroke_width_{wrd}{index}')
-                    state['stroke_fill'] = st.text_input(f"Stroke fill: {wrd}", state['stroke_fill'], key=f'stroke_fill_{wrd}{index}')
+                    state['font'][index] = st.selectbox(f"Font: {wrd}", state['fontlist'][0], key=f'font_{wrd}{index}')
+                    state['text_x'][index] = st.slider(f"Text x: {wrd}{index}", -500, 500, state['text_x'][0], 10, key=f'text_x_{wrd}{index}')
+                    state['text_y'][index] = st.slider(f"Text y: {wrd}{index}", -500, 500, state['text_y'][0], 10, key=f'text_y_{wrd}{index}')
+                    state['text_z'][index] = st.slider(f"Text size: {wrd}{index}", 0, 1000, state['text_z'][0], 8, key=f'text_z_{wrd}{index}')
+                    state['stroke_width'][index] = st.slider(f"Stroke width : {wrd}", 0, 20, state['stroke_width'][0], key=f'stroke_width_{wrd}{index}')
+                    state['stroke_fill'][index] = st.text_input(f"Stroke fill: {wrd}", state['stroke_fill'][0], key=f'stroke_fill_{wrd}{index}')
 
                     image = process_logotext(
                         image,
                         wrd,
-                        state['font'],
+                        state['font'][index],
                         state['fc'],
-                        state['text_x'],
-                        state['text_y'],
-                        state['text_z'],
-                        state['stroke_fill'],
-                        state['stroke_width'],
+                        state['text_x'][index],
+                        state['text_y'][index],
+                        state['text_z'][index],
+                        state['stroke_fill'][index],
+                        state['stroke_width'][index],
                         canvas_w=state['canvas_w'],
                         canvas_h=state['canvas_h']
                     )
