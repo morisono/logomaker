@@ -5,10 +5,6 @@
 Logomaker is an online tool that allows you to create your unique logos with mass product pattern.
 You don't have to be a professional designer to craft beautiful logos with just a few clicks.
 
-## Demo
-Try the demo by accessing the following link:
-[https://morisono-logomaker.hf.space](https://morisono-logomaker.hf.space)
-
 ## Features
 
 - **Easy to Use**: Design intuitively with drag & drop functionality.
