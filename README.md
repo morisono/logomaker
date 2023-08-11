@@ -2,7 +2,8 @@
 
 # Logomaker
 
-Logomaker is an online tool that allows you to create your unique logos quickly and easily. You don't have to be a professional designer to craft beautiful logos with just a few clicks.
+Logomaker is an online tool that allows you to create your unique logos with mass product pattern.
+You don't have to be a professional designer to craft beautiful logos with just a few clicks.
 
 ## Demo
 Try the demo by accessing the following link:
